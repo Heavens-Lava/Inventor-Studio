@@ -28,6 +28,7 @@ import NutritionTracker from "./pages/NutritionTracker";
 import FitnessAchievements from "./pages/FitnessAchievements";
 import FitnessWellness from "./pages/FitnessWellness";
 import ActivityTracker from "./pages/ActivityTracker";
+import FitnessGoals from "./pages/FitnessGoals";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +62,7 @@ const App = () => (
           <Route path="/fitness/workout" element={<WorkoutTracker />} />
           <Route path="/fitness/nutrition" element={<NutritionTracker />} />
           <Route path="/fitness/wellness" element={<FitnessWellness />} />
+          <Route path="/fitness/goals" element={<FitnessGoals />} />
           <Route path="/fitness/achievements" element={<FitnessAchievements />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
