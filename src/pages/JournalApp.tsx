@@ -383,7 +383,6 @@ const JournalApp = () => {
             ))}
           </div>
         )}
-      </div>
 
       {/* Entry Form Dialog */}
       <JournalEntryForm

@@ -820,7 +820,6 @@ const EditGoal = () => {
             Save Changes
           </Button>
         </div>
-      </div>
 
       {/* Dialogs */}
       <Dialog open={showSubgoalDialog} onOpenChange={setShowSubgoalDialog}>
