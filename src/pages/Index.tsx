@@ -1,4 +1,4 @@
-import { CheckSquare, Wallet, Lightbulb, Target, BookOpen, Calendar, TrendingUp, DollarSign, PiggyBank, TrendingDown } from "lucide-react";
+import { CheckSquare, Wallet, Lightbulb, Target, BookOpen, Calendar, TrendingUp, DollarSign, PiggyBank, TrendingDown, Activity } from "lucide-react";
 import AppCard from "@/components/AppCard";
 import AppHeader from "@/components/AppHeader";
 
@@ -73,6 +73,13 @@ const Index = () => {
       icon: PiggyBank,
       route: "/savings",
       gradient: "bg-gradient-primary",
+    },
+    {
+      title: "Fitness Tracker",
+      description: "Track workouts, nutrition, wellness with gamification and achievements",
+      icon: Activity,
+      route: "/fitness",
+      gradient: "bg-secondary",
     },
   ];
 

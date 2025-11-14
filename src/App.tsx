@@ -22,6 +22,11 @@ import EditBudget from "./pages/EditBudget";
 import SavingsApp from "./pages/SavingsApp";
 import CreateSavings from "./pages/CreateSavings";
 import EditSavings from "./pages/EditSavings";
+import FitnessApp from "./pages/FitnessApp";
+import WorkoutTracker from "./pages/WorkoutTracker";
+import NutritionTracker from "./pages/NutritionTracker";
+import FitnessAchievements from "./pages/FitnessAchievements";
+import FitnessWellness from "./pages/FitnessWellness";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +55,11 @@ const App = () => (
           <Route path="/savings" element={<SavingsApp />} />
           <Route path="/savings/create" element={<CreateSavings />} />
           <Route path="/savings/:savingsId/edit" element={<EditSavings />} />
+          <Route path="/fitness" element={<FitnessApp />} />
+          <Route path="/fitness/workout" element={<WorkoutTracker />} />
+          <Route path="/fitness/nutrition" element={<NutritionTracker />} />
+          <Route path="/fitness/wellness" element={<FitnessWellness />} />
+          <Route path="/fitness/achievements" element={<FitnessAchievements />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
