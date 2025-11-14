@@ -41,25 +41,60 @@ export const RequirementCard = memo(({ data, selected }: NodeProps<RequirementNo
       `}
       style={{ width: '240px' }}
     >
-      {/* Connection Handles */}
+      {/* Connection Handles - All 4 sides support both input and output */}
+      {/* Top */}
       <Handle
         type="target"
         position={Position.Top}
+        id="top-target"
+        className="w-3 h-3 !bg-blue-500"
+      />
+      <Handle
+        type="source"
+        position={Position.Top}
+        id="top-source"
+        className="w-3 h-3 !bg-blue-500"
+      />
+
+      {/* Bottom */}
+      <Handle
+        type="target"
+        position={Position.Bottom}
+        id="bottom-target"
         className="w-3 h-3 !bg-blue-500"
       />
       <Handle
         type="source"
         position={Position.Bottom}
+        id="bottom-source"
         className="w-3 h-3 !bg-blue-500"
       />
+
+      {/* Left */}
       <Handle
         type="target"
         position={Position.Left}
+        id="left-target"
+        className="w-3 h-3 !bg-blue-500"
+      />
+      <Handle
+        type="source"
+        position={Position.Left}
+        id="left-source"
+        className="w-3 h-3 !bg-blue-500"
+      />
+
+      {/* Right */}
+      <Handle
+        type="target"
+        position={Position.Right}
+        id="right-target"
         className="w-3 h-3 !bg-blue-500"
       />
       <Handle
         type="source"
         position={Position.Right}
+        id="right-source"
         className="w-3 h-3 !bg-blue-500"
       />
 
