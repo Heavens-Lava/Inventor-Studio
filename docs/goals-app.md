@@ -14,6 +14,14 @@ A comprehensive app for setting, planning, and tracking major and minor goals. T
 - **Progress Tracker:** Visualize progress with charts, checklists, or timelines.
 - **Tools Needed Area:** List and link resources, apps, or materials required.
 - **Scope Area:** Define the scope, boundaries, and impact of each goal.
+- **Goal Writing:** Add, edit, and organize goals with rich text support.
+- **Short-Term & Long-Term Goals:** Separate sections for immediate and future ambitions.
+- **Subgoals:** Break goals into smaller, actionable steps.
+- **Requirements:** List resources, skills, or milestones needed to achieve each goal.
+- **Progress Bar:** Visual indicator of progress for each goal and subgoal.
+- **Dreams Area:** Dedicated space for aspirational or "dream big" goals.
+- **Tags & Categories:** Organize goals by type, priority, or custom tags.
+- **Mobile Friendly:** Responsive design for seamless use on smartphones and tablets.
 
 ## Advanced Feature Recommendations
 

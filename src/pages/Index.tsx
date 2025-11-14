@@ -1,5 +1,6 @@
 import { CheckSquare, Wallet, Lightbulb, Target, BookOpen, Calendar, TrendingUp, DollarSign, PiggyBank, TrendingDown } from "lucide-react";
 import AppCard from "@/components/AppCard";
+import AppHeader from "@/components/AppHeader";
 
 const Index = () => {
   const apps = [
@@ -77,6 +78,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <AppHeader title="Daily Haven Suite" />
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-hero opacity-10" />

@@ -11,6 +11,8 @@ import CalendarApp from "./pages/CalendarApp";
 import FinanceApp from "./pages/FinanceApp";
 import IdeaMaker from "./pages/IdeaMaker";
 import GoalsRoadmap from "./pages/GoalsRoadmap";
+import CreateGoal from "./pages/CreateGoal";
+import EditGoal from "./pages/EditGoal";
 import JournalApp from "./pages/JournalApp";
 import HabitsApp from "./pages/HabitsApp";
 import ExpenseApp from "./pages/ExpenseApp";
@@ -37,6 +39,8 @@ const App = () => (
           <Route path="/finance" element={<FinanceApp />} />
           <Route path="/ideas" element={<IdeaMaker />} />
           <Route path="/goals" element={<GoalsRoadmap />} />
+          <Route path="/goals/create" element={<CreateGoal />} />
+          <Route path="/goals/:goalId/edit" element={<EditGoal />} />
           <Route path="/journal" element={<JournalApp />} />
           <Route path="/habits" element={<HabitsApp />} />
           <Route path="/expenses" element={<ExpenseApp />} />

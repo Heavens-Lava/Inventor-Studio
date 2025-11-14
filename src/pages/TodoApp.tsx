@@ -9,19 +9,31 @@ import { ExportImport } from "@/components/todo/ExportImport";
 import { useTodoStorage } from "@/hooks/useTodoStorage";
 import { Task, TodoFilter, UserStats } from "@/types/todo";
 import { toast } from "sonner";
-import { calculatePoints, calculateLevel, BADGES, checkBadgeEarned, updateStreakData, calculateRecurringNextDue } from "@/lib/gamification";
+import {
+  calculatePoints,
+  calculateLevel,
+  BADGES,
+  checkBadgeEarned,
+  updateStreakData,
+  calculateRecurringNextDue,
+} from "@/lib/gamification";
 import { generateId } from "@/lib/utils-todo";
 import { Button } from "@/components/ui/button";
 import { TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const BACKGROUND_GRADIENTS: Record<string, string> = {
-  "default": "",
-  "gradient-blue": "bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100 dark:from-blue-950 dark:via-cyan-950 dark:to-blue-900",
-  "gradient-purple": "bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-950 dark:to-purple-900",
-  "gradient-green": "bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 dark:from-green-950 dark:via-emerald-950 dark:to-green-900",
-  "gradient-orange": "bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 dark:from-orange-950 dark:via-amber-950 dark:to-orange-900",
-  "gradient-pink": "bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100 dark:from-pink-950 dark:via-rose-950 dark:to-pink-900",
+  default: "",
+  "gradient-blue":
+    "bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100 dark:from-blue-950 dark:via-cyan-950 dark:to-blue-900",
+  "gradient-purple":
+    "bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-950 dark:to-purple-900",
+  "gradient-green":
+    "bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 dark:from-green-950 dark:via-emerald-950 dark:to-green-900",
+  "gradient-orange":
+    "bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 dark:from-orange-950 dark:via-amber-950 dark:to-orange-900",
+  "gradient-pink":
+    "bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100 dark:from-pink-950 dark:via-rose-950 dark:to-pink-900",
 };
 
 const TodoApp = () => {
@@ -34,7 +46,7 @@ const TodoApp = () => {
     updateTask,
     deleteTask,
     reorderTasks,
-    updateSettings
+    updateSettings,
   } = useTodoStorage();
 
   const [filter, setFilter] = useState<TodoFilter>({});
@@ -48,11 +60,11 @@ const TodoApp = () => {
         userStats: {
           totalPoints: 0,
           level: 1,
-          badges: BADGES.map(b => ({ ...b })),
+          badges: BADGES.map((b) => ({ ...b })),
           tasksCompleted: 0,
           currentStreak: 0,
-          longestStreak: 0
-        }
+          longestStreak: 0,
+        },
       });
     }
   }, [isLoaded, settings.userStats, updateSettings]);
@@ -63,15 +75,18 @@ const TodoApp = () => {
       return {
         totalPoints: 0,
         level: 1,
-        badges: BADGES.map(b => ({ ...b })),
+        badges: BADGES.map((b) => ({ ...b })),
         tasksCompleted: 0,
         currentStreak: 0,
-        longestStreak: 0
+        longestStreak: 0,
       };
     }
 
-    const completedTasks = tasks.filter(t => t.status === "completed");
-    const totalPoints = completedTasks.reduce((sum, task) => sum + (task.points || 0), 0);
+    const completedTasks = tasks.filter((t) => t.status === "completed");
+    const totalPoints = completedTasks.reduce(
+      (sum, task) => sum + (task.points || 0),
+      0
+    );
     const level = calculateLevel(totalPoints);
 
     // Calculate current streak
@@ -80,7 +95,7 @@ const TodoApp = () => {
     let currentStreak = 0;
     let longestStreak = 0;
 
-    tasks.forEach(task => {
+    tasks.forEach((task) => {
       if (task.streak) {
         currentStreak = Math.max(currentStreak, task.streak.currentStreak);
         longestStreak = Math.max(longestStreak, task.streak.longestStreak);
@@ -88,20 +103,27 @@ const TodoApp = () => {
     });
 
     // Update badge progress
-    const badges = BADGES.map(badge => {
-      const earned = checkBadgeEarned(badge, {
-        ...settings.userStats!,
-        tasksCompleted: completedTasks.length,
-        currentStreak,
-        longestStreak,
-        totalPoints
-      }, tasks);
+    const badges = BADGES.map((badge) => {
+      const earned = checkBadgeEarned(
+        badge,
+        {
+          ...settings.userStats!,
+          tasksCompleted: completedTasks.length,
+          currentStreak,
+          longestStreak,
+          totalPoints,
+        },
+        tasks
+      );
 
       return {
         ...badge,
-        earnedAt: earned ? (badge.earnedAt || new Date()) : undefined,
-        progress: badge.id.includes('task') ? completedTasks.length :
-                 badge.id.includes('streak') ? currentStreak : undefined
+        earnedAt: earned ? badge.earnedAt || new Date() : undefined,
+        progress: badge.id.includes("task")
+          ? completedTasks.length
+          : badge.id.includes("streak")
+          ? currentStreak
+          : undefined,
       };
     });
 
@@ -111,7 +133,7 @@ const TodoApp = () => {
       badges,
       tasksCompleted: completedTasks.length,
       currentStreak,
-      longestStreak
+      longestStreak,
     };
   }, [tasks, settings.userStats]);
 
@@ -120,28 +142,29 @@ const TodoApp = () => {
     let result = [...tasks];
 
     if (filter.category) {
-      result = result.filter(task => task.category === filter.category);
+      result = result.filter((task) => task.category === filter.category);
     }
 
     if (filter.priority) {
-      result = result.filter(task => task.priority === filter.priority);
+      result = result.filter((task) => task.priority === filter.priority);
     }
 
     if (filter.status) {
-      result = result.filter(task => task.status === filter.status);
+      result = result.filter((task) => task.status === filter.status);
     }
 
     if (filter.searchQuery) {
       const query = filter.searchQuery.toLowerCase();
-      result = result.filter(task =>
-        task.title.toLowerCase().includes(query) ||
-        task.description?.toLowerCase().includes(query)
+      result = result.filter(
+        (task) =>
+          task.title.toLowerCase().includes(query) ||
+          task.description?.toLowerCase().includes(query)
       );
     }
 
     // Sort: pending first, then in-progress, then completed
     result.sort((a, b) => {
-      const statusOrder = { "pending": 0, "in-progress": 1, "completed": 2 };
+      const statusOrder = { pending: 0, "in-progress": 1, completed: 2 };
       return statusOrder[a.status] - statusOrder[b.status];
     });
 
@@ -149,12 +172,15 @@ const TodoApp = () => {
   }, [tasks, filter]);
 
   // Task counts
-  const taskCounts = useMemo(() => ({
-    total: tasks.length,
-    pending: tasks.filter(t => t.status === "pending").length,
-    inProgress: tasks.filter(t => t.status === "in-progress").length,
-    completed: tasks.filter(t => t.status === "completed").length,
-  }), [tasks]);
+  const taskCounts = useMemo(
+    () => ({
+      total: tasks.length,
+      pending: tasks.filter((t) => t.status === "pending").length,
+      inProgress: tasks.filter((t) => t.status === "in-progress").length,
+      completed: tasks.filter((t) => t.status === "completed").length,
+    }),
+    [tasks]
+  );
 
   const handleAddTask = (task: Task) => {
     addTask(task);
@@ -167,7 +193,7 @@ const TodoApp = () => {
   };
 
   const handleUpdateTask = (id: string, updates: Partial<Task>) => {
-    const currentTask = tasks.find(t => t.id === id);
+    const currentTask = tasks.find((t) => t.id === id);
     if (!currentTask) return;
 
     let updatedTask = { ...currentTask, ...updates };
@@ -179,13 +205,19 @@ const TodoApp = () => {
       updatedTask = updateStreakData(updatedTask);
 
       // Check for new badges
-      const newBadges = BADGES.filter(badge => {
-        const wasEarned = settings.userStats?.badges.find(b => b.id === badge.id)?.earnedAt;
-        const isNowEarned = checkBadgeEarned(badge, {
-          ...userStats,
-          tasksCompleted: userStats.tasksCompleted + 1,
-          totalPoints: userStats.totalPoints + (updatedTask.points || 0)
-        }, [...tasks.filter(t => t.id !== id), updatedTask]);
+      const newBadges = BADGES.filter((badge) => {
+        const wasEarned = settings.userStats?.badges.find(
+          (b) => b.id === badge.id
+        )?.earnedAt;
+        const isNowEarned = checkBadgeEarned(
+          badge,
+          {
+            ...userStats,
+            tasksCompleted: userStats.tasksCompleted + 1,
+            totalPoints: userStats.totalPoints + (updatedTask.points || 0),
+          },
+          [...tasks.filter((t) => t.id !== id), updatedTask]
+        );
         return !wasEarned && isNowEarned;
       });
 
@@ -194,11 +226,13 @@ const TodoApp = () => {
         toast.success(`Task completed! +${updatedTask.points} XP`);
       }
 
-      newBadges.forEach(badge => {
+      newBadges.forEach((badge) => {
         toast.success(`🏆 Badge Unlocked: ${badge.name}!`);
       });
 
-      const newLevel = calculateLevel(userStats.totalPoints + (updatedTask.points || 0));
+      const newLevel = calculateLevel(
+        userStats.totalPoints + (updatedTask.points || 0)
+      );
       if (newLevel > userStats.level) {
         toast.success(`🎉 Level Up! You're now Level ${newLevel}!`);
       }
@@ -225,12 +259,14 @@ const TodoApp = () => {
           recurring: {
             ...updatedTask.recurring,
             lastCompleted: new Date(),
-            nextDue
-          }
+            nextDue,
+          },
         };
 
         addTask(newRecurringTask);
-        toast.success(`📅 Recurring task renewed for ${nextDue.toLocaleDateString()}`);
+        toast.success(
+          `📅 Recurring task renewed for ${nextDue.toLocaleDateString()}`
+        );
       }
     }
 
@@ -256,8 +292,12 @@ const TodoApp = () => {
     }
 
     // Find indices in the filtered tasks (what's visible on screen)
-    const draggedFilteredIndex = filteredTasks.findIndex(t => t.id === draggedTaskId);
-    const targetFilteredIndex = filteredTasks.findIndex(t => t.id === targetTaskId);
+    const draggedFilteredIndex = filteredTasks.findIndex(
+      (t) => t.id === draggedTaskId
+    );
+    const targetFilteredIndex = filteredTasks.findIndex(
+      (t) => t.id === targetTaskId
+    );
 
     if (draggedFilteredIndex === -1 || targetFilteredIndex === -1) {
       setDraggedTaskId(null);
@@ -271,7 +311,7 @@ const TodoApp = () => {
 
     // Rebuild the full tasks array with the new order
     // Keep non-visible tasks in their original positions
-    const visibleTaskIds = new Set(filteredTasks.map(t => t.id));
+    const visibleTaskIds = new Set(filteredTasks.map((t) => t.id));
     const newTasks: Task[] = [];
     let visibleIndex = 0;
 
@@ -297,13 +337,19 @@ const TodoApp = () => {
   };
 
   // Apply background style
-  const backgroundClass = settings.backgroundType === "theme"
-    ? BACKGROUND_GRADIENTS[settings.backgroundTheme] || ""
-    : "";
+  const backgroundClass =
+    settings.backgroundType === "theme"
+      ? BACKGROUND_GRADIENTS[settings.backgroundTheme] || ""
+      : "";
 
-  const backgroundStyle = settings.backgroundType === "image" && settings.backgroundImage
-    ? { backgroundImage: `url(${settings.backgroundImage})`, backgroundSize: "cover", backgroundPosition: "center" }
-    : {};
+  const backgroundStyle =
+    settings.backgroundType === "image" && settings.backgroundImage
+      ? {
+          backgroundImage: `url(${settings.backgroundImage})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }
+      : {};
 
   if (!isLoaded) {
     return (
@@ -348,7 +394,10 @@ const TodoApp = () => {
               </Button>
             )}
             <ExportImport tasks={tasks} onImport={handleImportTasks} />
-            <TodoSettings settings={settings} onSettingsChange={updateSettings} />
+            <TodoSettings
+              settings={settings}
+              onSettingsChange={updateSettings}
+            />
             <AddTodoForm onAdd={handleAddTask} />
           </div>
         </div>
@@ -418,15 +467,21 @@ const TodoApp = () => {
               </div>
               <div>
                 <p className="text-muted-foreground">Pending</p>
-                <p className="text-2xl font-bold text-yellow-600">{taskCounts.pending}</p>
+                <p className="text-2xl font-bold text-yellow-600">
+                  {taskCounts.pending}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground">In Progress</p>
-                <p className="text-2xl font-bold text-blue-600">{taskCounts.inProgress}</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {taskCounts.inProgress}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold text-green-600">{taskCounts.completed}</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {taskCounts.completed}
+                </p>
               </div>
             </div>
           </div>
