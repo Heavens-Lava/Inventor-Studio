@@ -21,6 +21,7 @@ import {
   PlayCircle,
   PauseCircle,
   XCircle,
+  Map,
 } from "lucide-react";
 import { useGoalStorage } from "@/hooks/useGoalStorage";
 import {
@@ -151,10 +152,16 @@ const GoalsRoadmap = () => {
               {goals.length} {goals.length === 1 ? "goal" : "goals"} total
             </p>
           </div>
-          <Button onClick={() => navigate("/goals/create")} size="lg">
-            <Plus className="h-5 w-5 mr-2" />
-            New Goal
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" onClick={() => navigate("/goals/map")} size="lg">
+              <Map className="h-5 w-5 mr-2" />
+              Goal Map
+            </Button>
+            <Button onClick={() => navigate("/goals/create")} size="lg">
+              <Plus className="h-5 w-5 mr-2" />
+              New Goal
+            </Button>
+          </div>
         </div>
 
         {/* Search and Filters */}

@@ -13,6 +13,7 @@ import IdeaMaker from "./pages/IdeaMaker";
 import GoalsRoadmap from "./pages/GoalsRoadmap";
 import CreateGoal from "./pages/CreateGoal";
 import EditGoal from "./pages/EditGoal";
+import GoalMapCanvas from "./pages/GoalMapCanvas";
 import JournalApp from "./pages/JournalApp";
 import HabitsApp from "./pages/HabitsApp";
 import ExpenseApp from "./pages/ExpenseApp";
@@ -47,6 +48,7 @@ const App = () => (
           <Route path="/ideas" element={<IdeaMaker />} />
           <Route path="/goals" element={<GoalsRoadmap />} />
           <Route path="/goals/create" element={<CreateGoal />} />
+          <Route path="/goals/map" element={<GoalMapCanvas />} />
           <Route path="/goals/:goalId/edit" element={<EditGoal />} />
           <Route path="/journal" element={<JournalApp />} />
           <Route path="/habits" element={<HabitsApp />} />
