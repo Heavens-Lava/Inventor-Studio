@@ -65,7 +65,10 @@ const App = () => (
           <Route path="/fitness/nutrition" element={<NutritionTracker />} />
           <Route path="/fitness/wellness" element={<FitnessWellness />} />
           <Route path="/fitness/goals" element={<FitnessGoals />} />
-          <Route path="/fitness/achievements" element={<FitnessAchievements />} />
+          <Route
+            path="/fitness/achievements"
+            element={<FitnessAchievements />}
+          />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
