@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import AppHeader from "@/components/AppHeader";
+import AppLayout from "@/components/AppLayout";
 import { useIdeasStorage } from "@/hooks/useIdeasStorage";
 import { IdeaCard as IdeaCardComponent } from "@/components/ideas/IdeaCard";
 import { AddIdeaForm } from "@/components/ideas/AddIdeaForm";
@@ -40,14 +40,6 @@ import { toast } from "sonner";
 import { generateId } from "@/lib/utils-todo";
 import { IdeaBoard, IdeaLayout, ArrowConnection } from "@/types/ideas";
 import { cn } from "@/lib/utils";
-
-const BACKGROUND_GRADIENTS: Record<string, string> = {
-  "default": "",
-  "gradient-blue": "bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100 dark:from-blue-950 dark:via-cyan-950 dark:to-blue-900",
-  "gradient-purple": "bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-950 dark:to-purple-900",
-  "gradient-green": "bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 dark:from-green-950 dark:via-emerald-950 dark:to-green-900",
-  "gradient-orange": "bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 dark:from-orange-950 dark:via-amber-950 dark:to-orange-900",
-};
 
 const IdeaMaker = () => {
   const {
@@ -239,10 +231,6 @@ const IdeaMaker = () => {
     setQuickNoteText("");
   };
 
-  const backgroundClass = settings.backgroundType === "theme"
-    ? BACKGROUND_GRADIENTS[settings.backgroundTheme] || ""
-    : "";
-
   const backgroundStyle: React.CSSProperties = (() => {
     if (settings.backgroundType === "image" && settings.backgroundImage) {
       return {
@@ -260,18 +248,21 @@ const IdeaMaker = () => {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <AppLayout title="Daily Haven Suite">
         <p className="text-muted-foreground">Loading...</p>
-      </div>
+      </AppLayout>
     );
   }
 
   // No boards exist
   if (boards.length === 0) {
     return (
-      <div className={`min-h-screen ${backgroundClass}`} style={backgroundStyle}>
-        <AppHeader title="Daily Haven Suite" />
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <AppLayout
+        title="Daily Haven Suite"
+        backgroundGradient={settings.backgroundType === "theme" ? settings.backgroundTheme : "default"}
+        style={backgroundStyle}
+        containerClassName="max-w-4xl"
+      >
           <div className="text-center py-12">
             <Folders className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
             <h2 className="text-2xl font-bold mb-2">No Idea Boards Yet</h2>
@@ -283,16 +274,17 @@ const IdeaMaker = () => {
               Create First Board
             </Button>
           </div>
-        </div>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className={`min-h-screen ${backgroundClass}`} style={backgroundStyle}>
-      <AppHeader title="Daily Haven Suite" />
-
-      <div className="container mx-auto px-4 py-4 sm:py-8 max-w-7xl">
+    <AppLayout
+      title="Daily Haven Suite"
+      backgroundGradient={settings.backgroundType === "theme" ? settings.backgroundTheme : "default"}
+      style={backgroundStyle}
+      containerClassName="max-w-7xl"
+    >
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div className="flex-1 min-w-0">
@@ -570,8 +562,7 @@ const IdeaMaker = () => {
             )}
           </div>
         )}
-      </div>
-    </div>
+    </AppLayout>
   );
 };
 

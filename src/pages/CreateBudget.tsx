@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import AppHeader from "@/components/AppHeader";
+import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -123,17 +123,14 @@ const CreateBudget = () => {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <AppLayout title="Create Budget">
         <p className="text-muted-foreground">Loading...</p>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AppHeader title="Create Budget" />
-
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+    <AppLayout title="Create Budget" containerClassName="max-w-2xl">
         <Button
           variant="ghost"
           onClick={() => navigate("/budgets")}
@@ -302,8 +299,7 @@ const CreateBudget = () => {
             </div>
           </div>
         </Card>
-      </div>
-    </div>
+    </AppLayout>
   );
 };
 

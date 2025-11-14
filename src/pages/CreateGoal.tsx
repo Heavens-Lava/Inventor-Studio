@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import AppHeader from "@/components/AppHeader";
+import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -77,10 +77,7 @@ const CreateGoal = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <AppHeader title="Create New Goal" />
-
-      <div className="container mx-auto px-4 py-6 max-w-4xl">
+    <AppLayout title="Create New Goal" containerClassName="max-w-4xl" className="pb-20">
         <Button
           variant="ghost"
           onClick={() => navigate("/goals")}
@@ -238,8 +235,7 @@ const CreateGoal = () => {
             costs, planning notes, and track your progress in detail.
           </p>
         </Card>
-      </div>
-    </div>
+    </AppLayout>
   );
 };
 

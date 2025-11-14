@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import AppHeader from "@/components/AppHeader";
+import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -81,17 +81,14 @@ const BudgetApp = () => {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <AppLayout title="Budget Manager">
         <p className="text-muted-foreground">Loading...</p>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AppHeader title="Budget Manager" />
-
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <AppLayout title="Budget Manager" containerClassName="max-w-6xl">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
@@ -321,8 +318,7 @@ const BudgetApp = () => {
             })
           )}
         </div>
-      </div>
-    </div>
+    </AppLayout>
   );
 };
 

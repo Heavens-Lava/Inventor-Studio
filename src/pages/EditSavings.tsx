@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import AppHeader from "@/components/AppHeader";
+import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -178,20 +178,20 @@ const EditSavings = () => {
 
   if (!savingsLoaded || !budgetsLoaded) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <AppLayout title="Edit Savings Goal">
         <p className="text-muted-foreground">Loading...</p>
-      </div>
+      </AppLayout>
     );
   }
 
   if (!savingsGoal) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <AppLayout title="Edit Savings Goal">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">Savings goal not found</p>
           <Button onClick={() => navigate("/savings")}>Back to Savings</Button>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
@@ -222,10 +222,7 @@ const EditSavings = () => {
   }, 0);
 
   return (
-    <div className="min-h-screen bg-background">
-      <AppHeader title="Edit Savings Goal" />
-
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <AppLayout title="Edit Savings Goal" containerClassName="max-w-6xl">
         <Button variant="ghost" onClick={() => navigate("/savings")} className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Savings
@@ -635,7 +632,7 @@ const EditSavings = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </AppLayout>
   );
 };
 

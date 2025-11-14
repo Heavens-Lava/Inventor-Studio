@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import AppHeader from "@/components/AppHeader";
+import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -139,19 +139,16 @@ const CreateSavings = () => {
 
   if (!savingsLoaded || !budgetsLoaded) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <AppLayout title="Create Savings Goal">
         <p className="text-muted-foreground">Loading...</p>
-      </div>
+      </AppLayout>
     );
   }
 
   const budgetRemainders = calculateBudgetRemainders();
 
   return (
-    <div className="min-h-screen bg-background">
-      <AppHeader title="Create Savings Goal" />
-
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <AppLayout title="Create Savings Goal" containerClassName="max-w-4xl">
         <Button variant="ghost" onClick={() => navigate("/savings")} className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Savings
@@ -449,8 +446,7 @@ const CreateSavings = () => {
             </div>
           </div>
         </Card>
-      </div>
-    </div>
+    </AppLayout>
   );
 };
 

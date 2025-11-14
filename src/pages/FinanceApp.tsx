@@ -1,13 +1,10 @@
-import AppHeader from "@/components/AppHeader";
+import AppLayout from "@/components/AppLayout";
 
 const FinanceApp = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <AppHeader title="Finance Tracker" />
-      <div className="container mx-auto px-4 py-8">
-        <p className="text-muted-foreground">Coming soon... Track your finances and budget here.</p>
-      </div>
-    </div>
+    <AppLayout title="Finance Tracker">
+      <p className="text-muted-foreground">Coming soon... Track your finances and budget here.</p>
+    </AppLayout>
   );
 };
 

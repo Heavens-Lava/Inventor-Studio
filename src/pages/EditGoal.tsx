@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import AppHeader from "@/components/AppHeader";
+import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -153,27 +153,21 @@ const EditGoal = () => {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-background">
-        <AppHeader title="Edit Goal" />
-        <div className="container mx-auto px-4 py-8">
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
+      <AppLayout title="Edit Goal">
+        <p className="text-muted-foreground">Loading...</p>
+      </AppLayout>
     );
   }
 
   if (!goal) {
     return (
-      <div className="min-h-screen bg-background">
-        <AppHeader title="Edit Goal" />
-        <div className="container mx-auto px-4 py-8">
-          <p className="text-red-600">Goal not found</p>
-          <Button onClick={() => navigate("/goals")} className="mt-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Goals
-          </Button>
-        </div>
-      </div>
+      <AppLayout title="Edit Goal">
+        <p className="text-red-600">Goal not found</p>
+        <Button onClick={() => navigate("/goals")} className="mt-4">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Goals
+        </Button>
+      </AppLayout>
     );
   }
 
@@ -333,10 +327,7 @@ const EditGoal = () => {
   const daysUntil = calculateDaysUntilTarget({...goal, targetDate: targetDate ? new Date(targetDate) : undefined});
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <AppHeader title="Edit Goal" />
-
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
+    <AppLayout title="Edit Goal" containerClassName="max-w-6xl" className="pb-20">
         <Button variant="ghost" onClick={() => navigate("/goals")} className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Goals
@@ -1015,7 +1006,7 @@ const EditGoal = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </AppLayout>
   );
 };
 

@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import AppHeader from "@/components/AppHeader";
+import AppLayout from "@/components/AppLayout";
 import { useJournalStorage } from "@/hooks/useJournalStorage";
 import { JournalEntry } from "@/types/journal";
 import { JournalEntryCard } from "@/components/journal/JournalEntryCard";
@@ -112,17 +112,14 @@ const JournalApp = () => {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <AppLayout title="Daily Haven Suite">
         <p className="text-muted-foreground">Loading...</p>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AppHeader title="Daily Haven Suite" />
-
-      <div className="container mx-auto px-4 py-4 sm:py-8 max-w-7xl">
+    <AppLayout title="Daily Haven Suite" containerClassName="max-w-7xl">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div className="flex-1 min-w-0">
@@ -465,7 +462,7 @@ const JournalApp = () => {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </AppLayout>
   );
 };
 

@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import AppHeader from "@/components/AppHeader";
+import AppLayout from "@/components/AppLayout";
 import { useCalendarStorage } from "@/hooks/useCalendarStorage";
 import { CalendarView, CalendarEvent } from "@/types/calendar";
 import { AddEventForm } from "@/components/calendar/AddEventForm";
@@ -10,15 +10,6 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-
-const BACKGROUND_GRADIENTS: Record<string, string> = {
-  "default": "",
-  "gradient-blue": "bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100 dark:from-blue-950 dark:via-cyan-950 dark:to-blue-900",
-  "gradient-purple": "bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-950 dark:to-purple-900",
-  "gradient-green": "bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 dark:from-green-950 dark:via-emerald-950 dark:to-green-900",
-  "gradient-orange": "bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 dark:from-orange-950 dark:via-amber-950 dark:to-orange-900",
-  "gradient-pink": "bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100 dark:from-pink-950 dark:via-rose-950 dark:to-pink-900",
-};
 
 const DAY_COLOR_PALETTE = [
   { name: "None", color: "transparent" },
@@ -128,31 +119,27 @@ const CalendarApp = () => {
     return "";
   };
 
-  // Apply background style
-  const backgroundClass = settings.backgroundType === "theme"
-    ? BACKGROUND_GRADIENTS[settings.backgroundTheme] || ""
-    : "";
-
+  // Apply background style - for AppLayout className and style props
   const backgroundStyle = settings.backgroundType === "image" && settings.backgroundImage
     ? { backgroundImage: `url(${settings.backgroundImage})`, backgroundSize: "cover", backgroundPosition: "center" }
     : {};
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <AppLayout title="Daily Haven Suite">
         <p className="text-muted-foreground">Loading calendar...</p>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div
-      className={`min-h-screen transition-all duration-300 ${backgroundClass}`}
+    <AppLayout
+      title="Daily Haven Suite"
+      backgroundGradient={settings.backgroundType === "theme" ? settings.backgroundTheme : "default"}
       style={backgroundStyle}
+      containerClassName="max-w-7xl"
+      className="transition-all duration-300"
     >
-      <AppHeader title="Daily Haven Suite" />
-
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div className="flex-1">
@@ -422,8 +409,7 @@ const CalendarApp = () => {
             </div>
           </Card>
         )}
-      </div>
-    </div>
+    </AppLayout>
   );
 };
 

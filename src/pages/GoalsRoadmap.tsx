@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import AppHeader from "@/components/AppHeader";
+import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -82,12 +82,9 @@ const GoalsRoadmap = () => {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-background">
-        <AppHeader title="Goals & Roadmap" />
-        <div className="container mx-auto px-4 py-8">
-          <p className="text-muted-foreground">Loading goals...</p>
-        </div>
-      </div>
+      <AppLayout title="Goals & Roadmap">
+        <p className="text-muted-foreground">Loading goals...</p>
+      </AppLayout>
     );
   }
 
@@ -139,10 +136,7 @@ const GoalsRoadmap = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <AppHeader title="Goals & Roadmap" />
-
-      <div className="container mx-auto px-4 py-6">
+    <AppLayout title="Goals & Roadmap" className="pb-20">
         {/* Header with Add Button */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -376,7 +370,7 @@ const GoalsRoadmap = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </AppLayout>
   );
 };
 
