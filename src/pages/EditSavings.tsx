@@ -571,7 +571,6 @@ const EditSavings = () => {
             </Card>
           </div>
         </div>
-      </div>
 
       {/* Add Contribution Dialog */}
       <Dialog open={showContributionDialog} onOpenChange={setShowContributionDialog}>
