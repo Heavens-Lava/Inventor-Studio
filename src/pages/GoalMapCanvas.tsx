@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -24,6 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
   Plus,
   Trash2,
@@ -37,6 +38,12 @@ import {
   Wrench,
   StickyNote,
   Edit,
+  Undo,
+  Redo,
+  Copy,
+  Moon,
+  Sun,
+  Keyboard,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -65,6 +72,7 @@ function GoalMapCanvasInner() {
   const navigate = useNavigate();
   const { fitView, zoomIn, zoomOut, screenToFlowPosition } = useReactFlow();
   const { goals, isLoaded: goalsLoaded } = useGoalStorage();
+  const { theme, toggleTheme } = useTheme();
   const {
     nodes,
     edges,
@@ -79,11 +87,19 @@ function GoalMapCanvasInner() {
     updateEdge,
     clearCanvas,
     hasGoalNode,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    duplicateNode,
+    bulkDeleteNodes,
+    getSelectedNodes,
   } = useGoalMapStorage();
 
   const [isAddGoalDialogOpen, setIsAddGoalDialogOpen] = useState(false);
   const [isAddCardDialogOpen, setIsAddCardDialogOpen] = useState(false);
   const [isEditEdgeDialogOpen, setIsEditEdgeDialogOpen] = useState(false);
+  const [isShortcutsDialogOpen, setIsShortcutsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCardType, setSelectedCardType] = useState<CardType>('milestone');
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
@@ -116,6 +132,91 @@ function GoalMapCanvasInner() {
     color: 'yellow',
     tags: [] as string[],
   });
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if any dialog or input is focused
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const modifier = isMac ? e.metaKey : e.ctrlKey;
+
+      // Undo (Ctrl/Cmd + Z)
+      if (modifier && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        if (undo()) {
+          toast.success('Undone');
+        }
+      }
+
+      // Redo (Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y)
+      if ((modifier && e.shiftKey && e.key === 'z') || (modifier && e.key === 'y')) {
+        e.preventDefault();
+        if (redo()) {
+          toast.success('Redone');
+        }
+      }
+
+      // Duplicate (Ctrl/Cmd + D)
+      if (modifier && e.key === 'd') {
+        e.preventDefault();
+        const selected = getSelectedNodes();
+        if (selected.length === 1) {
+          duplicateNode(selected[0].id);
+          toast.success('Card duplicated');
+        } else if (selected.length > 1) {
+          toast.info('Please select only one card to duplicate');
+        }
+      }
+
+      // Delete (Delete or Backspace)
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        const selected = getSelectedNodes();
+        if (selected.length > 0) {
+          bulkDeleteNodes(selected.map((n) => n.id));
+          toast.success(`Deleted ${selected.length} card${selected.length > 1 ? 's' : ''}`);
+        }
+      }
+
+      // Fit view (F)
+      if (e.key === 'f' && !modifier) {
+        e.preventDefault();
+        fitView({ padding: 0.2, duration: 300 });
+      }
+
+      // Add goal (G)
+      if (e.key === 'g' && !modifier) {
+        e.preventDefault();
+        setIsAddGoalDialogOpen(true);
+      }
+
+      // Add card (A)
+      if (e.key === 'a' && !modifier) {
+        e.preventDefault();
+        setIsAddCardDialogOpen(true);
+      }
+
+      // Toggle dark mode (T)
+      if (e.key === 't' && !modifier) {
+        e.preventDefault();
+        toggleTheme();
+      }
+
+      // Show shortcuts (?)
+      if (e.key === '?' && !modifier) {
+        e.preventDefault();
+        setIsShortcutsDialogOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo, duplicateNode, bulkDeleteNodes, getSelectedNodes, fitView, toggleTheme]);
 
   // Filter goals that are not already on the canvas
   const availableGoals = useMemo(() => {
@@ -227,6 +328,54 @@ function GoalMapCanvasInner() {
     setIsEditEdgeDialogOpen(true);
   }, []);
 
+  // Handle edge hover
+  const handleEdgeMouseEnter: EdgeMouseHandler = useCallback((event, edge) => {
+    setHoveredEdge(edge.id);
+  }, []);
+
+  const handleEdgeMouseLeave: EdgeMouseHandler = useCallback(() => {
+    setHoveredEdge(null);
+  }, []);
+
+  // Handle undo/redo buttons
+  const handleUndo = useCallback(() => {
+    if (undo()) {
+      toast.success('Undone');
+    }
+  }, [undo]);
+
+  const handleRedo = useCallback(() => {
+    if (redo()) {
+      toast.success('Redone');
+    }
+  }, [redo]);
+
+  // Handle duplicate selected
+  const handleDuplicateSelected = useCallback(() => {
+    const selected = getSelectedNodes();
+    if (selected.length === 1) {
+      duplicateNode(selected[0].id);
+      toast.success('Card duplicated');
+    } else if (selected.length === 0) {
+      toast.info('Please select a card to duplicate');
+    } else {
+      toast.info('Please select only one card to duplicate');
+    }
+  }, [duplicateNode, getSelectedNodes]);
+
+  // Handle delete selected
+  const handleDeleteSelected = useCallback(() => {
+    const selected = getSelectedNodes();
+    if (selected.length > 0) {
+      if (confirm(`Delete ${selected.length} selected card${selected.length > 1 ? 's' : ''}?`)) {
+        bulkDeleteNodes(selected.map((n) => n.id));
+        toast.success(`Deleted ${selected.length} card${selected.length > 1 ? 's' : ''}`);
+      }
+    } else {
+      toast.info('No cards selected');
+    }
+  }, [bulkDeleteNodes, getSelectedNodes]);
+
   // Handle edge relationship type update
   const handleUpdateEdge = useCallback(() => {
     if (selectedEdgeId) {
@@ -274,24 +423,54 @@ function GoalMapCanvasInner() {
     );
   }
 
+  // Enhanced edges with hover effect
+  const enhancedEdges = useMemo(() => {
+    return edges.map((edge) => ({
+      ...edge,
+      animated: edge.id === hoveredEdge || edge.animated,
+      style: {
+        ...edge.style,
+        strokeWidth: edge.id === hoveredEdge ? 3 : 2,
+        opacity: hoveredEdge && edge.id !== hoveredEdge ? 0.3 : 1,
+        transition: 'all 0.2s ease-in-out',
+      },
+    }));
+  }, [edges, hoveredEdge]);
+
+  // Count selected nodes
+  const selectedCount = useMemo(() => {
+    return nodes.filter((n) => n.selected).length;
+  }, [nodes]);
+
   return (
-    <div className="h-screen w-full flex flex-col bg-gray-50">
+    <div className="h-screen w-full flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* Top Bar */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate('/goals')}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Goals
           </Button>
-          <div className="h-6 w-px bg-gray-300" />
-          <Target className="w-5 h-5 text-blue-600" />
-          <h1 className="text-xl font-bold text-gray-900">Goal Map</h1>
+          <div className="h-6 w-px bg-gray-300 dark:bg-gray-600" />
+          <Target className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Goal Map</h1>
         </div>
 
         <div className="flex items-center gap-2">
+          {selectedCount > 0 && (
+            <Badge variant="default" className="bg-blue-600">
+              {selectedCount} selected
+            </Badge>
+          )}
           <Badge variant="secondary">
-            {nodes.length} {nodes.length === 1 ? 'card' : 'cards'} on canvas
+            {nodes.length} {nodes.length === 1 ? 'card' : 'cards'}
           </Badge>
+          <Button variant="ghost" size="sm" onClick={toggleTheme}>
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setIsShortcutsDialogOpen(true)}>
+            <Keyboard className="w-4 h-4" />
+          </Button>
         </div>
       </div>
 
@@ -299,11 +478,13 @@ function GoalMapCanvasInner() {
       <div className="flex-1">
         <ReactFlow
           nodes={nodes}
-          edges={edges}
+          edges={enhancedEdges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           onEdgeClick={handleEdgeClick}
+          onEdgeMouseEnter={handleEdgeMouseEnter}
+          onEdgeMouseLeave={handleEdgeMouseLeave}
           onMoveEnd={handleMoveEnd}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
@@ -337,7 +518,58 @@ function GoalMapCanvasInner() {
 
           {/* Toolbar Panel */}
           <Panel position="top-right" className="space-y-2">
-            <Card className="p-2 space-y-2 shadow-lg">
+            <Card className="p-2 space-y-2 shadow-lg bg-white dark:bg-gray-800">
+              {/* Undo/Redo */}
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handleUndo}
+                  disabled={!canUndo}
+                  title="Undo (Ctrl+Z)"
+                >
+                  <Undo className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handleRedo}
+                  disabled={!canRedo}
+                  title="Redo (Ctrl+Y)"
+                >
+                  <Redo className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {selectedCount > 0 && (
+                <>
+                  <div className="h-px bg-gray-200 dark:bg-gray-700" />
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={handleDuplicateSelected}
+                      title="Duplicate (Ctrl+D)"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="flex-1"
+                      onClick={handleDeleteSelected}
+                      title="Delete (Del)"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              <div className="h-px bg-gray-200 dark:bg-gray-700" />
               <Dialog open={isAddGoalDialogOpen} onOpenChange={setIsAddGoalDialogOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm" className="w-full">
@@ -637,7 +869,7 @@ function GoalMapCanvasInner() {
                 </DialogContent>
               </Dialog>
 
-              <div className="h-px bg-gray-200" />
+              <div className="h-px bg-gray-200 dark:bg-gray-700" />
 
               <Button size="sm" variant="outline" className="w-full" onClick={handleFitView}>
                 <Maximize className="w-4 h-4 mr-2" />
@@ -654,7 +886,7 @@ function GoalMapCanvasInner() {
                 Zoom Out
               </Button>
 
-              <div className="h-px bg-gray-200" />
+              <div className="h-px bg-gray-200 dark:bg-gray-700" />
 
               <Button size="sm" variant="destructive" className="w-full" onClick={handleClearCanvas}>
                 <Trash2 className="w-4 h-4 mr-2" />
@@ -732,9 +964,75 @@ function GoalMapCanvasInner() {
         </DialogContent>
       </Dialog>
 
+      {/* Keyboard Shortcuts Dialog */}
+      <Dialog open={isShortcutsDialogOpen} onOpenChange={setIsShortcutsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Keyboard Shortcuts</DialogTitle>
+            <DialogDescription>Quick reference for available shortcuts</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <h3 className="font-semibold text-sm">Editing</h3>
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Undo</span>
+                  <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">Ctrl+Z</kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Redo</span>
+                  <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">Ctrl+Y</kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Duplicate</span>
+                  <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">Ctrl+D</kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Delete</span>
+                  <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">Del</kbd>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="font-semibold text-sm">Navigation</h3>
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Fit View</span>
+                  <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">F</kbd>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="font-semibold text-sm">Actions</h3>
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Add Goal</span>
+                  <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">G</kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Add Card</span>
+                  <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">A</kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Toggle Theme</span>
+                  <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">T</kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Show Shortcuts</span>
+                  <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">?</kbd>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Instructions Footer */}
-      <div className="bg-white border-t border-gray-200 px-4 py-2">
-        <div className="flex items-center justify-center gap-6 text-xs text-gray-600">
+      <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-2">
+        <div className="flex items-center justify-center gap-6 text-xs text-gray-600 dark:text-gray-400">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-blue-500 rounded-full" />
             <span>Drag cards to reposition</span>
@@ -746,6 +1044,10 @@ function GoalMapCanvasInner() {
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-blue-500 rounded-full" />
             <span>Click connections to edit</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-blue-500 rounded-full" />
+            <span>Press ? for shortcuts</span>
           </div>
         </div>
       </div>

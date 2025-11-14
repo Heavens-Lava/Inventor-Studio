@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { addEdge, Connection, Edge, applyNodeChanges, applyEdgeChanges, NodeChange, EdgeChange } from 'reactflow';
 import {
   GoalMapNode,
@@ -16,6 +16,12 @@ import {
 import { Goal } from '@/types/goal';
 
 const STORAGE_KEY = 'daily-haven-goal-map';
+const MAX_HISTORY = 50; // Maximum undo/redo history
+
+interface HistoryState {
+  nodes: GoalMapNode[];
+  edges: GoalMapEdge[];
+}
 
 /**
  * Hook for managing goal map data with localStorage persistence
@@ -25,6 +31,11 @@ export function useGoalMapStorage() {
   const [edges, setEdges] = useState<GoalMapEdge[]>([]);
   const [viewport, setViewport] = useState<GoalMapViewport>(defaultViewport);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Undo/Redo state
+  const [history, setHistory] = useState<HistoryState[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const isUndoRedoAction = useRef(false);
 
   // Load data from localStorage
   useEffect(() => {
@@ -36,6 +47,13 @@ export function useGoalMapStorage() {
           setNodes(data.nodes || []);
           setEdges(data.edges || []);
           setViewport(data.viewport || defaultViewport);
+          // Initialize history with current state
+          setHistory([{ nodes: data.nodes || [], edges: data.edges || [] }]);
+          setHistoryIndex(0);
+        } else {
+          // Initialize empty history
+          setHistory([{ nodes: [], edges: [] }]);
+          setHistoryIndex(0);
         }
       } catch (error) {
         console.error('Error loading goal map data:', error);
@@ -63,6 +81,62 @@ export function useGoalMapStorage() {
       console.error('Error saving goal map data:', error);
     }
   }, [nodes, edges, viewport, isLoaded]);
+
+  // Save to history when nodes or edges change (but not during undo/redo)
+  useEffect(() => {
+    if (!isLoaded || isUndoRedoAction.current) {
+      isUndoRedoAction.current = false;
+      return;
+    }
+
+    const newState: HistoryState = { nodes, edges };
+
+    setHistory((prev) => {
+      // Remove any future history if we're not at the end
+      const newHistory = prev.slice(0, historyIndex + 1);
+      // Add new state
+      newHistory.push(newState);
+      // Limit history size
+      if (newHistory.length > MAX_HISTORY) {
+        newHistory.shift();
+        return newHistory;
+      }
+      return newHistory;
+    });
+
+    setHistoryIndex((prev) => {
+      const newIndex = prev + 1;
+      return newIndex >= MAX_HISTORY ? MAX_HISTORY - 1 : newIndex;
+    });
+  }, [nodes, edges, isLoaded, historyIndex]);
+
+  /**
+   * Undo the last action
+   */
+  const undo = useCallback(() => {
+    if (historyIndex <= 0) return false;
+
+    isUndoRedoAction.current = true;
+    const prevState = history[historyIndex - 1];
+    setNodes(prevState.nodes);
+    setEdges(prevState.edges);
+    setHistoryIndex((prev) => prev - 1);
+    return true;
+  }, [history, historyIndex]);
+
+  /**
+   * Redo the last undone action
+   */
+  const redo = useCallback(() => {
+    if (historyIndex >= history.length - 1) return false;
+
+    isUndoRedoAction.current = true;
+    const nextState = history[historyIndex + 1];
+    setNodes(nextState.nodes);
+    setEdges(nextState.edges);
+    setHistoryIndex((prev) => prev + 1);
+    return true;
+  }, [history, historyIndex]);
 
   /**
    * Add a new goal node to the canvas
@@ -287,6 +361,65 @@ export function useGoalMapStorage() {
     } as GoalNodeData);
   }, [updateNode]);
 
+  /**
+   * Duplicate a node
+   */
+  const duplicateNode = useCallback((nodeId: string) => {
+    const node = nodes.find((n) => n.id === nodeId);
+    if (!node) return null;
+
+    // Generate new ID and offset position
+    const timestamp = Date.now();
+    const newId = `${node.type}-${timestamp}`;
+    const newNode: GoalMapNode = {
+      ...node,
+      id: newId,
+      position: {
+        x: node.position.x + 30,
+        y: node.position.y + 30,
+      },
+      data: {
+        ...node.data,
+        // For non-goal nodes, update the title to indicate it's a copy
+        title: node.data.nodeType === 'goal'
+          ? node.data.title
+          : `${node.data.title} (Copy)`,
+      },
+      selected: false,
+    };
+
+    setNodes((nds) => [...nds, newNode]);
+    return newNode;
+  }, [nodes]);
+
+  /**
+   * Bulk delete nodes
+   */
+  const bulkDeleteNodes = useCallback((nodeIds: string[]) => {
+    setNodes((nds) => nds.filter((node) => !nodeIds.includes(node.id)));
+    // Also remove any edges connected to these nodes
+    setEdges((eds) =>
+      eds.filter((edge) => !nodeIds.includes(edge.source) && !nodeIds.includes(edge.target))
+    );
+  }, []);
+
+  /**
+   * Get selected nodes
+   */
+  const getSelectedNodes = useCallback(() => {
+    return nodes.filter((node) => node.selected);
+  }, [nodes]);
+
+  /**
+   * Check if can undo
+   */
+  const canUndo = historyIndex > 0;
+
+  /**
+   * Check if can redo
+   */
+  const canRedo = historyIndex < history.length - 1;
+
   return {
     nodes,
     edges,
@@ -308,5 +441,12 @@ export function useGoalMapStorage() {
     getCanvasGoalIds,
     clearCanvas,
     syncNodeWithGoal,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    duplicateNode,
+    bulkDeleteNodes,
+    getSelectedNodes,
   };
 }
