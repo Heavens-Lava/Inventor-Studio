@@ -2,10 +2,20 @@ import { useNavigate } from "react-router-dom";
 import { useFitnessData } from "@/hooks/useFitnessData";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ProgressRing } from "@/components/fitness/ProgressRing";
 import { StatCard } from "@/components/fitness/StatCard";
 import { StreakDisplay } from "@/components/fitness/StreakDisplay";
 import { LevelProgress } from "@/components/fitness/LevelProgress";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Activity,
   Dumbbell,
@@ -20,8 +30,10 @@ import {
   Smile,
   ArrowLeft,
   Plus,
+  Settings,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 const motivationalQuotes = [
   "Your only limit is you!",
@@ -36,8 +48,9 @@ const motivationalQuotes = [
 
 export default function FitnessApp() {
   const navigate = useNavigate();
-  const { data, getTodayActivity, getTodayNutrition } = useFitnessData();
+  const { data, getTodayActivity, getTodayNutrition, updateDailyActivity, updateNutritionLog } = useFitnessData();
   const [quote] = useState(() => motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)]);
+  const [showGoalsDialog, setShowGoalsDialog] = useState(false);
 
   const todayActivity = getTodayActivity();
   const todayNutrition = getTodayNutrition();
@@ -53,6 +66,48 @@ export default function FitnessApp() {
   const waterGoal = todayNutrition?.waterGoal || 2000;
   const caloriesConsumed = todayNutrition?.totalCalories || 0;
   const calorieGoal = todayNutrition?.calorieGoal || 2000;
+
+  // Goals form state
+  const [goalsForm, setGoalsForm] = useState({
+    stepsGoal: stepsGoal.toString(),
+    activeMinutesGoal: activeMinutesGoal.toString(),
+    waterGoal: waterGoal.toString(),
+    calorieGoal: calorieGoal.toString(),
+  });
+
+  const handleSaveGoals = () => {
+    const newStepsGoal = parseInt(goalsForm.stepsGoal) || 10000;
+    const newActiveMinutesGoal = parseInt(goalsForm.activeMinutesGoal) || 30;
+    const newWaterGoal = parseInt(goalsForm.waterGoal) || 2000;
+    const newCalorieGoal = parseInt(goalsForm.calorieGoal) || 2000;
+
+    // Update activity goals
+    updateDailyActivity({
+      date: today,
+      steps,
+      stepsGoal: newStepsGoal,
+      activeMinutes,
+      activeMinutesGoal: newActiveMinutesGoal,
+      caloriesBurned,
+      distance: todayActivity?.distance || 0,
+      sedentaryMinutes: todayActivity?.sedentaryMinutes || 0,
+    });
+
+    // Update nutrition goals
+    updateNutritionLog({
+      date: today,
+      meals: todayNutrition?.meals || [],
+      waterIntake,
+      waterGoal: newWaterGoal,
+      totalCalories: caloriesConsumed,
+      calorieGoal: newCalorieGoal,
+      macros: todayNutrition?.macros || { protein: 0, carbs: 0, fats: 0 },
+      macroGoals: todayNutrition?.macroGoals || { protein: 150, carbs: 200, fats: 65 },
+    });
+
+    toast.success("Daily goals updated! 🎯");
+    setShowGoalsDialog(false);
+  };
 
   // Get recent workouts
   const recentWorkouts = data.workouts
@@ -103,11 +158,20 @@ export default function FitnessApp() {
               </div>
             </div>
             <Button
-              onClick={() => navigate("/fitness/settings")}
+              onClick={() => {
+                setGoalsForm({
+                  stepsGoal: stepsGoal.toString(),
+                  activeMinutesGoal: activeMinutesGoal.toString(),
+                  waterGoal: waterGoal.toString(),
+                  calorieGoal: calorieGoal.toString(),
+                });
+                setShowGoalsDialog(true);
+              }}
               variant="outline"
               size="sm"
             >
-              Settings
+              <Settings className="w-4 h-4 mr-2" />
+              Edit Goals
             </Button>
           </div>
         </div>
@@ -155,10 +219,28 @@ export default function FitnessApp() {
 
         {/* Daily Progress Rings */}
         <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-blue-500" />
-            Today's Progress
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-blue-500" />
+              Today's Progress
+            </h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setGoalsForm({
+                  stepsGoal: stepsGoal.toString(),
+                  activeMinutesGoal: activeMinutesGoal.toString(),
+                  waterGoal: waterGoal.toString(),
+                  calorieGoal: calorieGoal.toString(),
+                });
+                setShowGoalsDialog(true);
+              }}
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Edit Goals
+            </Button>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <ProgressRing
               progress={(steps / stepsGoal) * 100}
@@ -373,8 +455,16 @@ export default function FitnessApp() {
             className="flex-col h-16 gap-1"
             onClick={() => navigate("/fitness")}
           >
-            <Activity className="w-5 h-5" />
+            <TrendingUp className="w-5 h-5" />
             <span className="text-xs">Home</span>
+          </Button>
+          <Button
+            variant="ghost"
+            className="flex-col h-16 gap-1"
+            onClick={() => navigate("/fitness/activity")}
+          >
+            <Activity className="w-5 h-5" />
+            <span className="text-xs">Activity</span>
           </Button>
           <Button
             variant="ghost"
@@ -400,19 +490,83 @@ export default function FitnessApp() {
             <Trophy className="w-5 h-5" />
             <span className="text-xs">Rewards</span>
           </Button>
-          <Button
-            variant="ghost"
-            className="flex-col h-16 gap-1"
-            onClick={() => navigate("/fitness/analytics")}
-          >
-            <TrendingUp className="w-5 h-5" />
-            <span className="text-xs">Stats</span>
-          </Button>
         </div>
       </div>
 
       {/* Add padding for mobile bottom nav */}
       <div className="h-20 md:hidden" />
+
+      {/* Edit Goals Dialog */}
+      <Dialog open={showGoalsDialog} onOpenChange={setShowGoalsDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Daily Goals</DialogTitle>
+            <DialogDescription>
+              Customize your daily targets for steps, activity, water, and calories
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="stepsGoal">Daily Steps Goal</Label>
+              <Input
+                id="stepsGoal"
+                type="number"
+                placeholder="10000"
+                value={goalsForm.stepsGoal}
+                onChange={(e) => setGoalsForm({ ...goalsForm, stepsGoal: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">Recommended: 8,000 - 12,000 steps</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="activeMinutesGoal">Active Minutes Goal</Label>
+              <Input
+                id="activeMinutesGoal"
+                type="number"
+                placeholder="30"
+                value={goalsForm.activeMinutesGoal}
+                onChange={(e) => setGoalsForm({ ...goalsForm, activeMinutesGoal: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">Recommended: 30 - 60 minutes</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="waterGoal">Daily Water Goal (ml)</Label>
+              <Input
+                id="waterGoal"
+                type="number"
+                placeholder="2000"
+                value={goalsForm.waterGoal}
+                onChange={(e) => setGoalsForm({ ...goalsForm, waterGoal: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">Recommended: 2,000 - 3,000 ml</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="calorieGoal">Daily Calorie Goal</Label>
+              <Input
+                id="calorieGoal"
+                type="number"
+                placeholder="2000"
+                value={goalsForm.calorieGoal}
+                onChange={(e) => setGoalsForm({ ...goalsForm, calorieGoal: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">Adjust based on your fitness goals</p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowGoalsDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveGoals}>
+              <Target className="w-4 h-4 mr-2" />
+              Save Goals
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

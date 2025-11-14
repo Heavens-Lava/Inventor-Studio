@@ -27,6 +27,7 @@ import WorkoutTracker from "./pages/WorkoutTracker";
 import NutritionTracker from "./pages/NutritionTracker";
 import FitnessAchievements from "./pages/FitnessAchievements";
 import FitnessWellness from "./pages/FitnessWellness";
+import ActivityTracker from "./pages/ActivityTracker";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ const App = () => (
           <Route path="/savings/create" element={<CreateSavings />} />
           <Route path="/savings/:savingsId/edit" element={<EditSavings />} />
           <Route path="/fitness" element={<FitnessApp />} />
+          <Route path="/fitness/activity" element={<ActivityTracker />} />
           <Route path="/fitness/workout" element={<WorkoutTracker />} />
           <Route path="/fitness/nutrition" element={<NutritionTracker />} />
           <Route path="/fitness/wellness" element={<FitnessWellness />} />
