@@ -78,6 +78,7 @@ export type GoalMapNode = Node<NodeData>;
 export interface GoalMapEdgeData {
   label?: string;
   relationshipType?: 'depends-on' | 'leads-to' | 'related' | 'blocks';
+  animationDirection?: 'forward' | 'reverse';
 }
 
 /**

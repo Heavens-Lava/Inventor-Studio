@@ -29,6 +29,7 @@ export const CustomEdge = memo(({
   const relationshipType = data?.relationshipType || 'related';
   const style = edgeStyles[relationshipType];
   const customLabel = data?.label || style.label;
+  const animationDirection = data?.animationDirection || 'forward';
 
   return (
     <>
@@ -40,6 +41,7 @@ export const CustomEdge = memo(({
           strokeWidth: selected ? style.strokeWidth + 1 : style.strokeWidth,
           opacity: selected ? 1 : 0.8,
         }}
+        className={animationDirection === 'reverse' ? 'animated-reverse' : ''}
       />
       <EdgeLabelRenderer>
         <div

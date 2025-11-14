@@ -93,3 +93,8 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* ReactFlow edge animation reverse */
+.react-flow__edge.animated-reverse path {
+  animation-direction: reverse !important;
+}

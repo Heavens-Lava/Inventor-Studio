@@ -77,6 +77,7 @@ function GoalMapCanvasInner() {
     onEdgesChange,
     onConnect,
     updateEdge,
+    removeEdge,
     clearCanvas,
     hasGoalNode,
   } = useGoalMapStorage();
@@ -88,6 +89,7 @@ function GoalMapCanvasInner() {
   const [selectedCardType, setSelectedCardType] = useState<CardType>('milestone');
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [edgeRelationType, setEdgeRelationType] = useState<ConnectionMode>('related');
+  const [edgeAnimationDirection, setEdgeAnimationDirection] = useState<'forward' | 'reverse'>('forward');
 
   // Form states for new cards
   const [milestoneForm, setMilestoneForm] = useState({
@@ -222,18 +224,34 @@ function GoalMapCanvasInner() {
     event.stopPropagation();
     setSelectedEdgeId(edge.id);
     setEdgeRelationType((edge.data?.relationshipType as ConnectionMode) || 'related');
+    setEdgeAnimationDirection(edge.data?.animationDirection || 'forward');
     setIsEditEdgeDialogOpen(true);
   }, []);
 
   // Handle edge relationship type update
   const handleUpdateEdge = useCallback(() => {
     if (selectedEdgeId) {
-      updateEdge(selectedEdgeId, { relationshipType: edgeRelationType });
+      updateEdge(selectedEdgeId, {
+        relationshipType: edgeRelationType,
+        animationDirection: edgeAnimationDirection,
+      });
       toast.success('Connection updated');
       setIsEditEdgeDialogOpen(false);
       setSelectedEdgeId(null);
     }
-  }, [selectedEdgeId, edgeRelationType, updateEdge]);
+  }, [selectedEdgeId, edgeRelationType, edgeAnimationDirection, updateEdge]);
+
+  // Handle edge deletion
+  const handleDeleteEdge = useCallback(() => {
+    if (selectedEdgeId) {
+      if (confirm('Are you sure you want to delete this connection?')) {
+        removeEdge(selectedEdgeId);
+        toast.success('Connection deleted');
+        setIsEditEdgeDialogOpen(false);
+        setSelectedEdgeId(null);
+      }
+    }
+  }, [selectedEdgeId, removeEdge]);
 
   // Handle clearing the canvas
   const handleClearCanvas = useCallback(() => {
@@ -691,7 +709,7 @@ function GoalMapCanvasInner() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Connection</DialogTitle>
-            <DialogDescription>Choose the relationship type for this connection</DialogDescription>
+            <DialogDescription>Customize the connection between cards</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
@@ -717,6 +735,19 @@ function GoalMapCanvasInner() {
               </Select>
             </div>
 
+            <div>
+              <Label>Animation Direction</Label>
+              <Select value={edgeAnimationDirection} onValueChange={(v) => setEdgeAnimationDirection(v as 'forward' | 'reverse')}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="forward">Forward (Source → Target)</SelectItem>
+                  <SelectItem value="reverse">Reverse (Target → Source)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="flex gap-2">
               <Button onClick={handleUpdateEdge} className="flex-1">
                 <Edit className="w-4 h-4 mr-2" />
@@ -724,6 +755,13 @@ function GoalMapCanvasInner() {
               </Button>
               <Button variant="outline" onClick={() => setIsEditEdgeDialogOpen(false)} className="flex-1">
                 Cancel
+              </Button>
+            </div>
+
+            <div className="border-t pt-4">
+              <Button variant="destructive" onClick={handleDeleteEdge} className="w-full">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Connection
               </Button>
             </div>
           </div>
