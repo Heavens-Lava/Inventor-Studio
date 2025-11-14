@@ -88,6 +88,8 @@ function GoalMapCanvasInner() {
   const [selectedCardType, setSelectedCardType] = useState<CardType>('milestone');
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [edgeRelationType, setEdgeRelationType] = useState<ConnectionMode>('related');
+  const [edgeAnimationDirection, setEdgeAnimationDirection] = useState<'forward' | 'reverse'>('forward');
+  const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
 
   // Form states for new cards
   const [milestoneForm, setMilestoneForm] = useState({
