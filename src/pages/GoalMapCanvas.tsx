@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -6,16 +6,24 @@ import ReactFlow, {
   Panel,
   useReactFlow,
   ReactFlowProvider,
+  EdgeMouseHandler,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useGoalMapStorage } from '@/hooks/useGoalMapStorage';
 import { useGoalStorage } from '@/hooks/useGoalStorage';
 import { GoalMapCard } from '@/components/GoalMapCard';
+import { MilestoneCard } from '@/components/MilestoneCard';
+import { RequirementCard } from '@/components/RequirementCard';
+import { NoteCard } from '@/components/NoteCard';
+import { CustomEdge } from '@/components/CustomEdge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Plus,
   Trash2,
@@ -25,14 +33,29 @@ import {
   Target,
   ArrowLeft,
   Search,
+  Flag,
+  Wrench,
+  StickyNote,
+  Edit,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { ConnectionMode, edgeStyles } from '@/types/goalMap';
 
 // Define node types for ReactFlow
 const nodeTypes = {
   goalCard: GoalMapCard,
+  milestoneCard: MilestoneCard,
+  requirementCard: RequirementCard,
+  noteCard: NoteCard,
 };
+
+// Define edge types for ReactFlow
+const edgeTypes = {
+  smoothstep: CustomEdge,
+};
+
+type CardType = 'goal' | 'milestone' | 'requirement' | 'note';
 
 /**
  * GoalMapCanvasInner Component
@@ -40,24 +63,57 @@ const nodeTypes = {
  */
 function GoalMapCanvasInner() {
   const navigate = useNavigate();
-  const { fitView, zoomIn, zoomOut } = useReactFlow();
+  const { fitView, zoomIn, zoomOut, screenToFlowPosition } = useReactFlow();
   const { goals, isLoaded: goalsLoaded } = useGoalStorage();
   const {
     nodes,
     edges,
     isLoaded: mapLoaded,
     addGoalNode,
-    removeNode,
+    addMilestoneNode,
+    addRequirementNode,
+    addNoteNode,
     onNodesChange,
     onEdgesChange,
     onConnect,
-    updateViewport,
-    hasGoalNode,
+    updateEdge,
     clearCanvas,
+    hasGoalNode,
   } = useGoalMapStorage();
 
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isAddGoalDialogOpen, setIsAddGoalDialogOpen] = useState(false);
+  const [isAddCardDialogOpen, setIsAddCardDialogOpen] = useState(false);
+  const [isEditEdgeDialogOpen, setIsEditEdgeDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCardType, setSelectedCardType] = useState<CardType>('milestone');
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+  const [edgeRelationType, setEdgeRelationType] = useState<ConnectionMode>('related');
+
+  // Form states for new cards
+  const [milestoneForm, setMilestoneForm] = useState({
+    title: '',
+    description: '',
+    targetDate: '',
+    completed: false,
+    color: 'blue',
+  });
+
+  const [requirementForm, setRequirementForm] = useState({
+    title: '',
+    description: '',
+    requirementType: 'skill' as const,
+    completed: false,
+    cost: 0,
+    priority: 'medium' as const,
+  });
+
+  const [noteForm, setNoteForm] = useState({
+    title: '',
+    description: '',
+    content: '',
+    color: 'yellow',
+    tags: [] as string[],
+  });
 
   // Filter goals that are not already on the canvas
   const availableGoals = useMemo(() => {
@@ -81,17 +137,103 @@ function GoalMapCanvasInner() {
     const goal = goals.find((g) => g.id === goalId);
     if (!goal) return;
 
-    // Calculate a random position in the center area
-    const position = {
-      x: Math.random() * 400 + 100,
-      y: Math.random() * 400 + 100,
-    };
+    const position = screenToFlowPosition({
+      x: window.innerWidth / 2 - 140,
+      y: window.innerHeight / 2 - 150,
+    });
 
     addGoalNode(goal, position);
     toast.success(`Added "${goal.title}" to canvas`);
-    setIsAddDialogOpen(false);
+    setIsAddGoalDialogOpen(false);
     setSearchQuery('');
-  }, [goals, addGoalNode]);
+  }, [goals, addGoalNode, screenToFlowPosition]);
+
+  // Handle adding a new card (milestone, requirement, note)
+  const handleAddCard = useCallback(() => {
+    const position = screenToFlowPosition({
+      x: window.innerWidth / 2 - 120,
+      y: window.innerHeight / 2 - 100,
+    });
+
+    try {
+      if (selectedCardType === 'milestone') {
+        if (!milestoneForm.title.trim()) {
+          toast.error('Please enter a milestone title');
+          return;
+        }
+        addMilestoneNode(milestoneForm, position);
+        toast.success('Milestone added to canvas');
+        setMilestoneForm({
+          title: '',
+          description: '',
+          targetDate: '',
+          completed: false,
+          color: 'blue',
+        });
+      } else if (selectedCardType === 'requirement') {
+        if (!requirementForm.title.trim()) {
+          toast.error('Please enter a requirement title');
+          return;
+        }
+        addRequirementNode(requirementForm, position);
+        toast.success('Requirement added to canvas');
+        setRequirementForm({
+          title: '',
+          description: '',
+          requirementType: 'skill',
+          completed: false,
+          cost: 0,
+          priority: 'medium',
+        });
+      } else if (selectedCardType === 'note') {
+        if (!noteForm.title.trim()) {
+          toast.error('Please enter a note title');
+          return;
+        }
+        addNoteNode(noteForm, position);
+        toast.success('Note added to canvas');
+        setNoteForm({
+          title: '',
+          description: '',
+          content: '',
+          color: 'yellow',
+          tags: [],
+        });
+      }
+
+      setIsAddCardDialogOpen(false);
+    } catch (error) {
+      toast.error('Failed to add card');
+      console.error(error);
+    }
+  }, [
+    selectedCardType,
+    milestoneForm,
+    requirementForm,
+    noteForm,
+    addMilestoneNode,
+    addRequirementNode,
+    addNoteNode,
+    screenToFlowPosition,
+  ]);
+
+  // Handle edge click for editing
+  const handleEdgeClick: EdgeMouseHandler = useCallback((event, edge) => {
+    event.stopPropagation();
+    setSelectedEdgeId(edge.id);
+    setEdgeRelationType((edge.data?.relationshipType as ConnectionMode) || 'related');
+    setIsEditEdgeDialogOpen(true);
+  }, []);
+
+  // Handle edge relationship type update
+  const handleUpdateEdge = useCallback(() => {
+    if (selectedEdgeId) {
+      updateEdge(selectedEdgeId, { relationshipType: edgeRelationType });
+      toast.success('Connection updated');
+      setIsEditEdgeDialogOpen(false);
+      setSelectedEdgeId(null);
+    }
+  }, [selectedEdgeId, edgeRelationType, updateEdge]);
 
   // Handle clearing the canvas
   const handleClearCanvas = useCallback(() => {
@@ -112,9 +254,12 @@ function GoalMapCanvasInner() {
   }, [fitView]);
 
   // Update viewport when it changes
-  const handleMoveEnd = useCallback((event: any, viewport: any) => {
-    updateViewport(viewport);
-  }, [updateViewport]);
+  const handleMoveEnd = useCallback(
+    (event: any, viewport: any) => {
+      // Viewport is auto-saved via the hook
+    },
+    []
+  );
 
   if (!goalsLoaded || !mapLoaded) {
     return (
@@ -143,7 +288,7 @@ function GoalMapCanvasInner() {
 
         <div className="flex items-center gap-2">
           <Badge variant="secondary">
-            {nodes.length} {nodes.length === 1 ? 'goal' : 'goals'} on canvas
+            {nodes.length} {nodes.length === 1 ? 'card' : 'cards'} on canvas
           </Badge>
         </div>
       </div>
@@ -156,8 +301,10 @@ function GoalMapCanvasInner() {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onEdgeClick={handleEdgeClick}
           onMoveEnd={handleMoveEnd}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           fitView
           minZoom={0.1}
           maxZoom={2}
@@ -171,11 +318,17 @@ function GoalMapCanvasInner() {
           <Controls />
           <MiniMap
             nodeColor={(node) => {
-              const status = node.data.status;
-              if (status === 'completed') return '#22c55e';
-              if (status === 'in-progress') return '#3b82f6';
-              if (status === 'on-hold') return '#f59e0b';
-              return '#9ca3af';
+              if (node.type === 'goalCard') {
+                const status = node.data.status;
+                if (status === 'completed') return '#22c55e';
+                if (status === 'in-progress') return '#3b82f6';
+                if (status === 'on-hold') return '#f59e0b';
+                return '#9ca3af';
+              }
+              if (node.type === 'milestoneCard') return '#3b82f6';
+              if (node.type === 'requirementCard') return '#10b981';
+              if (node.type === 'noteCard') return '#fbbf24';
+              return '#6b7280';
             }}
             maskColor="rgba(0, 0, 0, 0.1)"
           />
@@ -183,16 +336,17 @@ function GoalMapCanvasInner() {
           {/* Toolbar Panel */}
           <Panel position="top-right" className="space-y-2">
             <Card className="p-2 space-y-2 shadow-lg">
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <Dialog open={isAddGoalDialogOpen} onOpenChange={setIsAddGoalDialogOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm" className="w-full">
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Target className="w-4 h-4 mr-2" />
                     Add Goal
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
                   <DialogHeader>
                     <DialogTitle>Add Goal to Canvas</DialogTitle>
+                    <DialogDescription>Select a goal from your goals list to add to the canvas</DialogDescription>
                   </DialogHeader>
 
                   <div className="mb-4">
@@ -269,46 +423,238 @@ function GoalMapCanvasInner() {
                 </DialogContent>
               </Dialog>
 
+              <Dialog open={isAddCardDialogOpen} onOpenChange={setIsAddCardDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="outline" className="w-full">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Card
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Add New Card</DialogTitle>
+                    <DialogDescription>Create a milestone, requirement, or note card</DialogDescription>
+                  </DialogHeader>
+
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Card Type</Label>
+                      <Select value={selectedCardType} onValueChange={(v) => setSelectedCardType(v as CardType)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="milestone">
+                            <div className="flex items-center gap-2">
+                              <Flag className="w-4 h-4" />
+                              Milestone
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="requirement">
+                            <div className="flex items-center gap-2">
+                              <Wrench className="w-4 h-4" />
+                              Requirement
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="note">
+                            <div className="flex items-center gap-2">
+                              <StickyNote className="w-4 h-4" />
+                              Note
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {selectedCardType === 'milestone' && (
+                      <>
+                        <div>
+                          <Label>Title *</Label>
+                          <Input
+                            value={milestoneForm.title}
+                            onChange={(e) => setMilestoneForm({ ...milestoneForm, title: e.target.value })}
+                            placeholder="Milestone title"
+                          />
+                        </div>
+                        <div>
+                          <Label>Description</Label>
+                          <Textarea
+                            value={milestoneForm.description}
+                            onChange={(e) => setMilestoneForm({ ...milestoneForm, description: e.target.value })}
+                            placeholder="Optional description"
+                            rows={3}
+                          />
+                        </div>
+                        <div>
+                          <Label>Target Date</Label>
+                          <Input
+                            type="date"
+                            value={milestoneForm.targetDate}
+                            onChange={(e) => setMilestoneForm({ ...milestoneForm, targetDate: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label>Color</Label>
+                          <Select
+                            value={milestoneForm.color}
+                            onValueChange={(v) => setMilestoneForm({ ...milestoneForm, color: v })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="blue">Blue</SelectItem>
+                              <SelectItem value="green">Green</SelectItem>
+                              <SelectItem value="purple">Purple</SelectItem>
+                              <SelectItem value="pink">Pink</SelectItem>
+                              <SelectItem value="yellow">Yellow</SelectItem>
+                              <SelectItem value="gray">Gray</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </>
+                    )}
+
+                    {selectedCardType === 'requirement' && (
+                      <>
+                        <div>
+                          <Label>Title *</Label>
+                          <Input
+                            value={requirementForm.title}
+                            onChange={(e) => setRequirementForm({ ...requirementForm, title: e.target.value })}
+                            placeholder="Requirement title"
+                          />
+                        </div>
+                        <div>
+                          <Label>Description</Label>
+                          <Textarea
+                            value={requirementForm.description}
+                            onChange={(e) => setRequirementForm({ ...requirementForm, description: e.target.value })}
+                            placeholder="Optional description"
+                            rows={3}
+                          />
+                        </div>
+                        <div>
+                          <Label>Type</Label>
+                          <Select
+                            value={requirementForm.requirementType}
+                            onValueChange={(v: any) => setRequirementForm({ ...requirementForm, requirementType: v })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="skill">Skill</SelectItem>
+                              <SelectItem value="resource">Resource</SelectItem>
+                              <SelectItem value="tool">Tool</SelectItem>
+                              <SelectItem value="knowledge">Knowledge</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>Priority</Label>
+                          <Select
+                            value={requirementForm.priority}
+                            onValueChange={(v: any) => setRequirementForm({ ...requirementForm, priority: v })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="low">Low</SelectItem>
+                              <SelectItem value="medium">Medium</SelectItem>
+                              <SelectItem value="high">High</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>Cost (optional)</Label>
+                          <Input
+                            type="number"
+                            value={requirementForm.cost}
+                            onChange={(e) =>
+                              setRequirementForm({ ...requirementForm, cost: parseFloat(e.target.value) || 0 })
+                            }
+                            placeholder="0"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {selectedCardType === 'note' && (
+                      <>
+                        <div>
+                          <Label>Title *</Label>
+                          <Input
+                            value={noteForm.title}
+                            onChange={(e) => setNoteForm({ ...noteForm, title: e.target.value })}
+                            placeholder="Note title"
+                          />
+                        </div>
+                        <div>
+                          <Label>Description</Label>
+                          <Input
+                            value={noteForm.description}
+                            onChange={(e) => setNoteForm({ ...noteForm, description: e.target.value })}
+                            placeholder="Optional subtitle"
+                          />
+                        </div>
+                        <div>
+                          <Label>Content</Label>
+                          <Textarea
+                            value={noteForm.content}
+                            onChange={(e) => setNoteForm({ ...noteForm, content: e.target.value })}
+                            placeholder="Note content..."
+                            rows={4}
+                          />
+                        </div>
+                        <div>
+                          <Label>Color</Label>
+                          <Select value={noteForm.color} onValueChange={(v) => setNoteForm({ ...noteForm, color: v })}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="yellow">Yellow</SelectItem>
+                              <SelectItem value="blue">Blue</SelectItem>
+                              <SelectItem value="green">Green</SelectItem>
+                              <SelectItem value="purple">Purple</SelectItem>
+                              <SelectItem value="pink">Pink</SelectItem>
+                              <SelectItem value="gray">Gray</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </>
+                    )}
+
+                    <Button onClick={handleAddCard} className="w-full">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add {selectedCardType.charAt(0).toUpperCase() + selectedCardType.slice(1)}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
               <div className="h-px bg-gray-200" />
 
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full"
-                onClick={handleFitView}
-              >
+              <Button size="sm" variant="outline" className="w-full" onClick={handleFitView}>
                 <Maximize className="w-4 h-4 mr-2" />
                 Fit View
               </Button>
 
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full"
-                onClick={() => zoomIn()}
-              >
+              <Button size="sm" variant="outline" className="w-full" onClick={() => zoomIn()}>
                 <ZoomIn className="w-4 h-4 mr-2" />
                 Zoom In
               </Button>
 
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full"
-                onClick={() => zoomOut()}
-              >
+              <Button size="sm" variant="outline" className="w-full" onClick={() => zoomOut()}>
                 <ZoomOut className="w-4 h-4 mr-2" />
                 Zoom Out
               </Button>
 
               <div className="h-px bg-gray-200" />
 
-              <Button
-                size="sm"
-                variant="destructive"
-                className="w-full"
-                onClick={handleClearCanvas}
-              >
+              <Button size="sm" variant="destructive" className="w-full" onClick={handleClearCanvas}>
                 <Trash2 className="w-4 h-4 mr-2" />
                 Clear Canvas
               </Button>
@@ -322,21 +668,67 @@ function GoalMapCanvasInner() {
                 <Target className="w-12 h-12 mx-auto mb-3 text-gray-400" />
                 <h2 className="text-lg font-semibold mb-2">Start Mapping Your Goals</h2>
                 <p className="text-sm text-gray-600 mb-4">
-                  Add goals to the canvas and connect them to visualize your roadmap
+                  Add goals, milestones, requirements, and notes to the canvas and connect them
                 </p>
-                <Button
-                  size="sm"
-                  onClick={() => setIsAddDialogOpen(true)}
-                  className="pointer-events-auto"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Your First Goal
-                </Button>
+                <div className="flex gap-2 justify-center pointer-events-auto">
+                  <Button size="sm" onClick={() => setIsAddGoalDialogOpen(true)}>
+                    <Target className="w-4 h-4 mr-2" />
+                    Add Goal
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setIsAddCardDialogOpen(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Card
+                  </Button>
+                </div>
               </Card>
             </Panel>
           )}
         </ReactFlow>
       </div>
+
+      {/* Edge Edit Dialog */}
+      <Dialog open={isEditEdgeDialogOpen} onOpenChange={setIsEditEdgeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Connection</DialogTitle>
+            <DialogDescription>Choose the relationship type for this connection</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label>Relationship Type</Label>
+              <Select value={edgeRelationType} onValueChange={(v) => setEdgeRelationType(v as ConnectionMode)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(edgeStyles).map(([key, style]) => (
+                    <SelectItem key={key} value={key}>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-4 h-1 rounded"
+                          style={{ backgroundColor: style.stroke }}
+                        />
+                        {style.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-2">
+              <Button onClick={handleUpdateEdge} className="flex-1">
+                <Edit className="w-4 h-4 mr-2" />
+                Update
+              </Button>
+              <Button variant="outline" onClick={() => setIsEditEdgeDialogOpen(false)} className="flex-1">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Instructions Footer */}
       <div className="bg-white border-t border-gray-200 px-4 py-2">
@@ -347,11 +739,11 @@ function GoalMapCanvasInner() {
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-blue-500 rounded-full" />
-            <span>Connect handles to link goals</span>
+            <span>Connect handles to link items</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-blue-500 rounded-full" />
-            <span>Right-click edges to delete</span>
+            <span>Click connections to edit</span>
           </div>
         </div>
       </div>

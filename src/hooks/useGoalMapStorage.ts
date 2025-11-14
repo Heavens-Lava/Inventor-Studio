@@ -1,6 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { addEdge, Connection, Edge, applyNodeChanges, applyEdgeChanges, NodeChange, EdgeChange } from 'reactflow';
-import { GoalMapNode, GoalMapEdge, GoalMapData, GoalMapNodeData, GoalMapEdgeData, defaultViewport, GoalMapViewport } from '@/types/goalMap';
+import {
+  GoalMapNode,
+  GoalMapEdge,
+  GoalMapData,
+  GoalNodeData,
+  MilestoneNodeData,
+  RequirementNodeData,
+  NoteNodeData,
+  NodeData,
+  GoalMapEdgeData,
+  defaultViewport,
+  GoalMapViewport,
+} from '@/types/goalMap';
 import { Goal } from '@/types/goal';
 
 const STORAGE_KEY = 'daily-haven-goal-map';
@@ -61,6 +73,7 @@ export function useGoalMapStorage() {
       type: 'goalCard',
       position,
       data: {
+        nodeType: 'goal',
         goalId: goal.id,
         title: goal.title,
         description: goal.description,
@@ -70,6 +83,72 @@ export function useGoalMapStorage() {
         progress: goal.progress,
         category: goal.category,
         tags: goal.tags,
+      },
+    };
+
+    setNodes((nds) => [...nds, newNode]);
+    return newNode;
+  }, []);
+
+  /**
+   * Add a new milestone node to the canvas
+   */
+  const addMilestoneNode = useCallback((
+    data: Omit<MilestoneNodeData, 'nodeType'>,
+    position: { x: number; y: number }
+  ) => {
+    const id = `milestone-${Date.now()}`;
+    const newNode: GoalMapNode = {
+      id,
+      type: 'milestoneCard',
+      position,
+      data: {
+        nodeType: 'milestone',
+        ...data,
+      },
+    };
+
+    setNodes((nds) => [...nds, newNode]);
+    return newNode;
+  }, []);
+
+  /**
+   * Add a new requirement node to the canvas
+   */
+  const addRequirementNode = useCallback((
+    data: Omit<RequirementNodeData, 'nodeType'>,
+    position: { x: number; y: number }
+  ) => {
+    const id = `requirement-${Date.now()}`;
+    const newNode: GoalMapNode = {
+      id,
+      type: 'requirementCard',
+      position,
+      data: {
+        nodeType: 'requirement',
+        ...data,
+      },
+    };
+
+    setNodes((nds) => [...nds, newNode]);
+    return newNode;
+  }, []);
+
+  /**
+   * Add a new note node to the canvas
+   */
+  const addNoteNode = useCallback((
+    data: Omit<NoteNodeData, 'nodeType'>,
+    position: { x: number; y: number }
+  ) => {
+    const id = `note-${Date.now()}`;
+    const newNode: GoalMapNode = {
+      id,
+      type: 'noteCard',
+      position,
+      data: {
+        nodeType: 'note',
+        ...data,
       },
     };
 
@@ -89,7 +168,7 @@ export function useGoalMapStorage() {
   /**
    * Update a node's data
    */
-  const updateNode = useCallback((nodeId: string, data: Partial<GoalMapNodeData>) => {
+  const updateNode = useCallback((nodeId: string, data: Partial<NodeData>) => {
     setNodes((nds) =>
       nds.map((node) => {
         if (node.id === nodeId) {
@@ -176,7 +255,9 @@ export function useGoalMapStorage() {
    * Get all goal IDs that are on the canvas
    */
   const getCanvasGoalIds = useCallback(() => {
-    return nodes.map((node) => node.data.goalId);
+    return nodes
+      .filter((node) => node.data.nodeType === 'goal')
+      .map((node) => (node.data as GoalNodeData).goalId);
   }, [nodes]);
 
   /**
@@ -193,6 +274,8 @@ export function useGoalMapStorage() {
    */
   const syncNodeWithGoal = useCallback((goal: Goal) => {
     updateNode(goal.id, {
+      nodeType: 'goal',
+      goalId: goal.id,
       title: goal.title,
       description: goal.description,
       type: goal.type,
@@ -201,7 +284,7 @@ export function useGoalMapStorage() {
       progress: goal.progress,
       category: goal.category,
       tags: goal.tags,
-    });
+    } as GoalNodeData);
   }, [updateNode]);
 
   return {
@@ -210,6 +293,9 @@ export function useGoalMapStorage() {
     viewport,
     isLoaded,
     addGoalNode,
+    addMilestoneNode,
+    addRequirementNode,
+    addNoteNode,
     removeNode,
     updateNode,
     onNodesChange,

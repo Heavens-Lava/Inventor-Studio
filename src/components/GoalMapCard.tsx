@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
-import { GoalMapNodeData } from '@/types/goalMap';
+import { GoalNodeData } from '@/types/goalMap';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Target, Flag, AlertCircle, CheckCircle2, Pause, XCircle } from 'lucide-react';
@@ -37,7 +37,7 @@ const typeColors = {
  * GoalMapCard Component
  * Custom node component for displaying goals on the canvas
  */
-export const GoalMapCard = memo(({ data, selected }: NodeProps<GoalMapNodeData>) => {
+export const GoalMapCard = memo(({ data, selected }: NodeProps<GoalNodeData>) => {
   const StatusIcon = statusIcons[data.status];
 
   return (
