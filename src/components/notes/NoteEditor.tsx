@@ -13,7 +13,7 @@ import { EditorBubbleMenu } from './EditorBubbleMenu';
 import { DrawingEditor } from './DrawingEditor';
 import type { DrawingElement } from '@/types/note';
 import { Button } from '@/components/ui/button';
-import { Pencil, Type, ChevronLeft, ChevronRight, ArrowLeftRight } from 'lucide-react';
+import { Pencil, Type, ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
 interface NoteEditorProps {
@@ -36,6 +36,33 @@ export function NoteEditor({
   const [isTextCollapsed, setIsTextCollapsed] = useState(false);
   const [isDrawingCollapsed, setIsDrawingCollapsed] = useState(false);
   const [isPanelsSwapped, setIsPanelsSwapped] = useState(false);
+  const [isDraggingOver, setIsDraggingOver] = useState<'text' | 'drawing' | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, panelType: 'text' | 'drawing') => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', panelType);
+  };
+
+  const handleDragOver = (e: React.DragEvent, panelType: 'text' | 'drawing') => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setIsDraggingOver(panelType);
+  };
+
+  const handleDragLeave = () => {
+    setIsDraggingOver(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetPanel: 'text' | 'drawing') => {
+    e.preventDefault();
+    const sourcePanel = e.dataTransfer.getData('text/plain') as 'text' | 'drawing';
+
+    if (sourcePanel !== targetPanel) {
+      setIsPanelsSwapped(!isPanelsSwapped);
+    }
+
+    setIsDraggingOver(null);
+  };
 
   const editor = useEditor({
     extensions: [
@@ -111,9 +138,21 @@ export function NoteEditor({
       onExpand={() => setIsTextCollapsed(false)}
       className={isTextCollapsed ? 'hidden' : ''}
     >
-      <div className="flex flex-col h-full bg-white border-r-2 border-gray-300">
-        <div className="border-b border-gray-200 px-3 py-2 bg-gradient-to-r from-blue-50 to-white">
+      <div
+        className="flex flex-col h-full bg-white border-r-2 border-gray-300"
+        onDragOver={(e) => handleDragOver(e, 'text')}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => handleDrop(e, 'text')}
+      >
+        <div
+          className={`border-b border-gray-200 px-3 py-2 bg-gradient-to-r from-blue-50 to-white cursor-move transition-all ${
+            isDraggingOver === 'text' ? 'ring-2 ring-blue-400 bg-blue-100' : ''
+          }`}
+          draggable
+          onDragStart={(e) => handleDragStart(e, 'text')}
+        >
           <div className="flex items-center gap-2">
+            <GripVertical className="w-4 h-4 text-gray-400" />
             <Type className="w-5 h-5 text-blue-600" />
             <h3 className="font-semibold text-gray-800">Text Editor</h3>
             <Button
@@ -146,9 +185,21 @@ export function NoteEditor({
       onExpand={() => setIsDrawingCollapsed(false)}
       className={isDrawingCollapsed ? 'hidden' : ''}
     >
-      <div className="flex flex-col h-full bg-white">
-        <div className="border-b border-gray-200 px-3 py-2 bg-gradient-to-r from-purple-50 to-white">
+      <div
+        className="flex flex-col h-full bg-white"
+        onDragOver={(e) => handleDragOver(e, 'drawing')}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => handleDrop(e, 'drawing')}
+      >
+        <div
+          className={`border-b border-gray-200 px-3 py-2 bg-gradient-to-r from-purple-50 to-white cursor-move transition-all ${
+            isDraggingOver === 'drawing' ? 'ring-2 ring-purple-400 bg-purple-100' : ''
+          }`}
+          draggable
+          onDragStart={(e) => handleDragStart(e, 'drawing')}
+        >
           <div className="flex items-center gap-2">
+            <GripVertical className="w-4 h-4 text-gray-400" />
             <Pencil className="w-5 h-5 text-purple-600" />
             <h3 className="font-semibold text-gray-800">Drawing Canvas</h3>
             <span className="text-xs text-gray-500 ml-auto">Infinite canvas with zoom & pan</span>
@@ -175,18 +226,6 @@ export function NoteEditor({
 
   return (
     <div className="note-editor h-full bg-gray-50 relative">
-      {/* Swap Button */}
-      <Button
-        variant="outline"
-        size="sm"
-        className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10 shadow-lg bg-white"
-        onClick={() => setIsPanelsSwapped(!isPanelsSwapped)}
-        title="Swap Panels"
-      >
-        <ArrowLeftRight className="w-4 h-4 mr-2" />
-        Swap
-      </Button>
-
       {/* Expand Buttons (shown when panels are collapsed) */}
       {isTextCollapsed && (
         <Button
