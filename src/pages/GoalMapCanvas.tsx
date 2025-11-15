@@ -13,11 +13,14 @@ import "reactflow/dist/style.css";
 import { useGoalMapStorage } from "@/hooks/useGoalMapStorage";
 import { useGoalStorage } from "@/hooks/useGoalStorage";
 import { useUndoRedo } from "@/hooks/useUndoRedo";
+import { useTemplateStorage } from "@/hooks/useTemplateStorage";
 import { GoalMapCard } from "@/components/GoalMapCard";
 import { MilestoneCard } from "@/components/MilestoneCard";
 import { RequirementCard } from "@/components/RequirementCard";
 import { NoteCard } from "@/components/NoteCard";
 import { CustomEdge } from "@/components/CustomEdge";
+import { TemplateBrowser } from "@/components/TemplateBrowser";
+import { QuickStartWizard } from "@/components/QuickStartWizard";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -64,6 +67,9 @@ import {
   Copy,
   Keyboard,
   Menu,
+  Save,
+  FolderOpen,
+  Sparkles,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -116,11 +122,17 @@ function GoalMapCanvasInner() {
   } = useGoalMapStorage();
 
   const { canUndo, canRedo, undo, redo, pushHistory, clearHistory } = useUndoRedo();
+  const { loadTemplate, saveTemplate } = useTemplateStorage();
 
   const [isAddGoalDialogOpen, setIsAddGoalDialogOpen] = useState(false);
   const [isAddCardDialogOpen, setIsAddCardDialogOpen] = useState(false);
   const [isEditEdgeDialogOpen, setIsEditEdgeDialogOpen] = useState(false);
   const [isShortcutsDialogOpen, setIsShortcutsDialogOpen] = useState(false);
+  const [isTemplateBrowserOpen, setIsTemplateBrowserOpen] = useState(false);
+  const [isQuickStartOpen, setIsQuickStartOpen] = useState(false);
+  const [isSaveTemplateDialogOpen, setIsSaveTemplateDialogOpen] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateDescription, setTemplateDescription] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCardType, setSelectedCardType] =
     useState<CardType>("milestone");
@@ -416,6 +428,85 @@ function GoalMapCanvasInner() {
   const handleFitView = useCallback(() => {
     fitView({ padding: 0.2, duration: 300 });
   }, [fitView]);
+
+  // Handle applying template
+  const handleApplyTemplate = useCallback((templateId: string | null, customization?: { title?: string; description?: string }) => {
+    if (!templateId) {
+      // Start with blank canvas - just close the wizard
+      toast.success("Starting with blank canvas");
+      return;
+    }
+
+    const template = loadTemplate(templateId);
+    if (!template) {
+      toast.error("Template not found");
+      return;
+    }
+
+    // Clear existing canvas
+    if (nodes.length > 0) {
+      if (!confirm("This will replace your current canvas. Continue?")) {
+        return;
+      }
+      clearCanvas();
+      clearHistory();
+    }
+
+    // Apply template nodes and edges
+    setNodesState(template.nodes);
+    setEdgesState(template.edges);
+
+    toast.success(`Applied "${template.name}" template`);
+
+    // Fit view after a short delay to ensure nodes are rendered
+    setTimeout(() => {
+      fitView({ padding: 0.2, duration: 500 });
+    }, 100);
+  }, [loadTemplate, nodes.length, clearCanvas, clearHistory, setNodesState, setEdgesState, fitView]);
+
+  // Handle saving current canvas as template
+  const handleSaveAsTemplate = useCallback(() => {
+    if (nodes.length === 0) {
+      toast.error("Cannot save empty canvas as template");
+      return;
+    }
+
+    if (!templateName.trim()) {
+      toast.error("Please enter a template name");
+      return;
+    }
+
+    const result = saveTemplate(
+      templateName.trim(),
+      templateDescription.trim() || "Custom goal map template",
+      "custom",
+      nodes,
+      edges
+    );
+
+    if (result) {
+      toast.success("Template saved successfully");
+      setIsSaveTemplateDialogOpen(false);
+      setTemplateName("");
+      setTemplateDescription("");
+    } else {
+      toast.error("Failed to save template");
+    }
+  }, [nodes, edges, templateName, templateDescription, saveTemplate]);
+
+  // Show quick start wizard on first visit if canvas is empty
+  useEffect(() => {
+    if (mapLoaded && nodes.length === 0) {
+      const hasSeenWizard = localStorage.getItem('goalmap_wizard_seen');
+      if (!hasSeenWizard) {
+        // Small delay to ensure everything is loaded
+        setTimeout(() => {
+          setIsQuickStartOpen(true);
+          localStorage.setItem('goalmap_wizard_seen', 'true');
+        }, 500);
+      }
+    }
+  }, [mapLoaded, nodes.length]);
 
   // Update viewport when it changes
   const handleMoveEnd = useCallback((event: any, viewport: any) => {
@@ -970,6 +1061,40 @@ function GoalMapCanvasInner() {
 
               <div className="h-px bg-gray-200" />
 
+              {/* Template Controls */}
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                onClick={() => setIsQuickStartOpen(true)}
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Quick Start
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                onClick={() => setIsTemplateBrowserOpen(true)}
+              >
+                <FolderOpen className="w-4 h-4 mr-2" />
+                Templates
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                onClick={() => setIsSaveTemplateDialogOpen(true)}
+                disabled={nodes.length === 0}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Save Template
+              </Button>
+
+              <div className="h-px bg-gray-200" />
+
               {/* Bulk Operations */}
               <Button
                 size="sm"
@@ -1314,6 +1439,67 @@ function GoalMapCanvasInner() {
           </div>
         </div>
       </div>
+
+      {/* Template Browser */}
+      <TemplateBrowser
+        open={isTemplateBrowserOpen}
+        onOpenChange={setIsTemplateBrowserOpen}
+        onApplyTemplate={handleApplyTemplate}
+      />
+
+      {/* Quick Start Wizard */}
+      <QuickStartWizard
+        open={isQuickStartOpen}
+        onOpenChange={setIsQuickStartOpen}
+        onApplyTemplate={handleApplyTemplate}
+      />
+
+      {/* Save Template Dialog */}
+      <Dialog open={isSaveTemplateDialogOpen} onOpenChange={setIsSaveTemplateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save as Template</DialogTitle>
+            <DialogDescription>
+              Save your current goal map as a reusable template
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label>Template Name *</Label>
+              <Input
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                placeholder="My Custom Template"
+              />
+            </div>
+
+            <div>
+              <Label>Description</Label>
+              <Textarea
+                value={templateDescription}
+                onChange={(e) => setTemplateDescription(e.target.value)}
+                placeholder="Describe what this template is for..."
+                rows={3}
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button onClick={handleSaveAsTemplate} className="flex-1">
+                <Save className="w-4 h-4 mr-2" />
+                Save Template
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setIsSaveTemplateDialogOpen(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
