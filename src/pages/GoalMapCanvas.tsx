@@ -16,6 +16,8 @@ import { useGoalStorage } from "@/hooks/useGoalStorage";
 import { useUndoRedo } from "@/hooks/useUndoRedo";
 import { useTemplateStorage } from "@/hooks/useTemplateStorage";
 import { useGoalMapList } from "@/hooks/useGoalMapList";
+import { useMapExport } from "@/hooks/useMapExport";
+import { useMapShare } from "@/hooks/useMapShare";
 import { GoalMapCard } from "@/components/GoalMapCard";
 import { MilestoneCard } from "@/components/MilestoneCard";
 import { RequirementCard } from "@/components/RequirementCard";
@@ -73,6 +75,10 @@ import {
   Save,
   FolderOpen,
   Sparkles,
+  Download,
+  Share2,
+  Image,
+  FileImage,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -127,6 +133,8 @@ function GoalMapCanvasInner() {
 
   const { canUndo, canRedo, undo, redo, pushHistory, clearHistory } = useUndoRedo();
   const { loadTemplate, saveTemplate } = useTemplateStorage();
+  const { exportAsPng, exportAsSvg } = useMapExport();
+  const { copyShareLink, decodeMapData } = useMapShare();
 
   const [isAddGoalDialogOpen, setIsAddGoalDialogOpen] = useState(false);
   const [isAddCardDialogOpen, setIsAddCardDialogOpen] = useState(false);
@@ -136,8 +144,12 @@ function GoalMapCanvasInner() {
   const [isQuickStartOpen, setIsQuickStartOpen] = useState(false);
   const [isSaveTemplateDialogOpen, setIsSaveTemplateDialogOpen] = useState(false);
   const [isMapManagerOpen, setIsMapManagerOpen] = useState(false);
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
   const [templateDescription, setTemplateDescription] = useState("");
+  const [isViewOnly, setIsViewOnly] = useState(false);
+  const [sharedMapName, setSharedMapName] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCardType, setSelectedCardType] =
     useState<CardType>("milestone");
@@ -522,7 +534,49 @@ function GoalMapCanvasInner() {
 
   // Get current map name
   const currentMap = maps.find((m) => m.id === activeMapId);
-  const currentMapName = currentMap?.name || 'Goal Map';
+  const currentMapName = sharedMapName || currentMap?.name || 'Goal Map';
+
+  // Check for shared map in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sharedData = params.get('shared');
+    const isView = params.get('view') === 'true';
+
+    if (sharedData && isView) {
+      const decoded = decodeMapData(sharedData);
+      if (decoded) {
+        setIsViewOnly(true);
+        setSharedMapName(decoded.name);
+        setNodesState(decoded.nodes);
+        setEdgesState(decoded.edges);
+        toast.success(`Viewing shared map: ${decoded.name}`);
+
+        // Fit view after loading
+        setTimeout(() => {
+          fitView({ padding: 0.2, duration: 500 });
+        }, 100);
+      } else {
+        toast.error('Invalid share link');
+      }
+    }
+  }, [decodeMapData, setNodesState, setEdgesState, fitView]);
+
+  // Handle export
+  const handleExport = useCallback(async (format: 'png' | 'svg') => {
+    const fileName = currentMapName.replace(/\s+/g, '-').toLowerCase();
+    if (format === 'png') {
+      await exportAsPng(fileName);
+    } else {
+      await exportAsSvg(fileName);
+    }
+    setIsExportDialogOpen(false);
+  }, [currentMapName, exportAsPng, exportAsSvg]);
+
+  // Handle share
+  const handleShare = useCallback(async () => {
+    await copyShareLink(currentMapName, currentMap?.description, nodes, edges);
+    setIsShareDialogOpen(false);
+  }, [currentMapName, currentMap?.description, nodes, edges, copyShareLink]);
 
   // Update viewport when it changes
   const handleMoveEnd = useCallback((event: any, viewport: any) => {
@@ -617,19 +671,45 @@ function GoalMapCanvasInner() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsMapManagerOpen(true)}
-          >
-            <FolderOpen className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Maps</span>
-            {maps.length > 1 && (
-              <Badge variant="secondary" className="ml-2">
-                {maps.length}
-              </Badge>
-            )}
-          </Button>
+          {isViewOnly ? (
+            <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+              View Only
+            </Badge>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsShareDialogOpen(true)}
+                disabled={nodes.length === 0}
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Share</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsExportDialogOpen(true)}
+                disabled={nodes.length === 0}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Export</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsMapManagerOpen(true)}
+              >
+                <FolderOpen className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Maps</span>
+                {maps.length > 1 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {maps.length}
+                  </Badge>
+                )}
+              </Button>
+            </>
+          )}
           <Badge variant="secondary">
             {nodes.length} {nodes.length === 1 ? "card" : "cards"}
           </Badge>
@@ -641,21 +721,24 @@ function GoalMapCanvasInner() {
         <ReactFlow
           nodes={nodes}
           edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onEdgeClick={handleEdgeClick}
-          onEdgeUpdate={handleEdgeUpdate}
+          onNodesChange={isViewOnly ? undefined : onNodesChange}
+          onEdgesChange={isViewOnly ? undefined : onEdgesChange}
+          onConnect={isViewOnly ? undefined : onConnect}
+          onEdgeClick={isViewOnly ? undefined : handleEdgeClick}
+          onEdgeUpdate={isViewOnly ? undefined : handleEdgeUpdate}
           onMoveEnd={handleMoveEnd}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           fitView
           minZoom={0.1}
           maxZoom={2}
-          selectionOnDrag
+          selectionOnDrag={!isViewOnly}
           panOnDrag={[1, 2]}
-          selectionMode="partial"
-          edgeUpdaterRadius={10}
+          selectionMode={isViewOnly ? undefined : "partial"}
+          edgeUpdaterRadius={isViewOnly ? 0 : 10}
+          nodesDraggable={!isViewOnly}
+          nodesConnectable={!isViewOnly}
+          elementsSelectable={!isViewOnly}
           defaultEdgeOptions={{
             type: "smoothstep",
             animated: true,
@@ -681,8 +764,9 @@ function GoalMapCanvasInner() {
             maskColor="rgba(0, 0, 0, 0.1)"
           />
 
-          {/* Toolbar Panel - Hidden on mobile */}
-          <Panel position="top-right" className="hidden lg:block space-y-2">
+          {/* Toolbar Panel - Hidden on mobile and in view-only mode */}
+          {!isViewOnly && (
+            <Panel position="top-right" className="hidden lg:block space-y-2">
             <Card className="p-2 space-y-2 shadow-lg">
               {/* Undo/Redo Controls */}
               <div className="flex gap-1">
@@ -1209,8 +1293,10 @@ function GoalMapCanvasInner() {
               </Button>
             </Card>
           </Panel>
+          )}
 
-          {/* Mobile Compact Toolbar - Hidden on desktop */}
+          {/* Mobile Compact Toolbar - Hidden on desktop and in view-only mode */}
+          {!isViewOnly && (
           <Panel position="bottom-right" className="lg:hidden">
             <div className="flex flex-col gap-2">
               <Button
@@ -1242,9 +1328,10 @@ function GoalMapCanvasInner() {
               </Button>
             </div>
           </Panel>
+          )}
 
           {/* Empty State */}
-          {nodes.length === 0 && (
+          {nodes.length === 0 && !isViewOnly && (
             <Panel position="top-center" className="pointer-events-none">
               <Card className="p-6 text-center bg-white/90 backdrop-blur">
                 <Target className="w-12 h-12 mx-auto mb-3 text-gray-400" />
@@ -1540,6 +1627,83 @@ function GoalMapCanvasInner() {
         open={isMapManagerOpen}
         onOpenChange={setIsMapManagerOpen}
       />
+
+      {/* Export Dialog */}
+      <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Export Goal Map</DialogTitle>
+            <DialogDescription>
+              Export your goal map as an image file
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                onClick={() => handleExport('png')}
+                className="h-24 flex-col gap-2"
+              >
+                <Image className="w-8 h-8" />
+                <span>Export as PNG</span>
+              </Button>
+              <Button
+                onClick={() => handleExport('svg')}
+                variant="outline"
+                className="h-24 flex-col gap-2"
+              >
+                <FileImage className="w-8 h-8" />
+                <span>Export as SVG</span>
+              </Button>
+            </div>
+            <p className="text-sm text-gray-500 text-center">
+              Image will be exported at 1920x1080 resolution
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Dialog */}
+      <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share Goal Map</DialogTitle>
+            <DialogDescription>
+              Share a view-only link to your goal map
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Share2 className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-blue-900 mb-1">
+                    View-Only Sharing
+                  </h4>
+                  <p className="text-sm text-blue-700">
+                    Recipients can view and navigate the map but cannot make any changes.
+                    The map data is encoded in the URL.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleShare}
+              className="w-full"
+              size="lg"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              Copy Share Link
+            </Button>
+
+            <p className="text-xs text-gray-500 text-center">
+              The link will be copied to your clipboard
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
