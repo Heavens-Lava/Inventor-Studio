@@ -81,6 +81,7 @@ import {
   Image,
   FileImage,
   Upload,
+  Bug,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -615,6 +616,43 @@ function GoalMapCanvasInner() {
     }
   }, [importBackup, setNodesState, setEdgesState]);
 
+  // Debug: Log all localStorage data for all maps
+  const debugLocalStorage = useCallback(() => {
+    console.log('=== DEBUG: All Maps localStorage Data ===');
+    console.log('Active Map ID:', activeMapId);
+    console.log('All Maps:', maps);
+
+    maps.forEach((map) => {
+      const nodesKey = `goalmap_nodes_${map.id}`;
+      const edgesKey = `goalmap_edges_${map.id}`;
+      const viewportKey = `goalmap_viewport_${map.id}`;
+
+      const nodesData = localStorage.getItem(nodesKey);
+      const edgesData = localStorage.getItem(edgesKey);
+      const viewportData = localStorage.getItem(viewportKey);
+
+      console.log(`\nMap: ${map.name} (${map.id})`);
+      console.log(`  Nodes (${nodesKey}):`, nodesData ? JSON.parse(nodesData).length : 'NOT FOUND');
+      console.log(`  Edges (${edgesKey}):`, edgesData ? JSON.parse(edgesData).length : 'NOT FOUND');
+      console.log(`  Viewport (${viewportKey}):`, viewportData || 'NOT FOUND');
+
+      if (nodesData) {
+        console.log(`  Raw nodes:`, JSON.parse(nodesData));
+      }
+      if (edgesData) {
+        console.log(`  Raw edges:`, JSON.parse(edgesData));
+      }
+    });
+
+    console.log('\nCurrent React State:');
+    console.log('  nodes:', nodes.length, nodes);
+    console.log('  edges:', edges.length, edges);
+    console.log('  mapLoaded:', mapLoaded);
+    console.log('=== END DEBUG ===');
+
+    toast.success('Debug info logged to console (F12)');
+  }, [activeMapId, maps, nodes, edges, mapLoaded]);
+
   // Update viewport when it changes
   const handleMoveEnd = useCallback((event: any, viewport: any) => {
     // Viewport is auto-saved via the hook
@@ -772,6 +810,14 @@ function GoalMapCanvasInner() {
           <Badge variant="outline" className="text-xs font-mono">
             ID: {activeMapId}
           </Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={debugLocalStorage}
+            title="Debug: Log all map data to console"
+          >
+            <Bug className="w-4 h-4" />
+          </Button>
         </div>
       </div>
 

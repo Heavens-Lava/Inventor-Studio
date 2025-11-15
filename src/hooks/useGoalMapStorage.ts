@@ -86,10 +86,22 @@ export function useGoalMapStorage(mapId: string = 'default') {
       const storedEdges = localStorage.getItem(EDGES_KEY);
       const storedViewport = localStorage.getItem(VIEWPORT_KEY);
 
+      console.log(`[Load] localStorage keys:`, { NODES_KEY, EDGES_KEY, VIEWPORT_KEY });
+      console.log(`[Load] Raw localStorage data:`, {
+        nodes: storedNodes,
+        edges: storedEdges,
+        viewport: storedViewport
+      });
+
       const parsedNodes = storedNodes ? JSON.parse(storedNodes) : [];
       const parsedEdges = storedEdges ? JSON.parse(storedEdges) : [];
 
-      console.log(`[Load] Map ${mapId}: ${parsedNodes.length} nodes, ${parsedEdges.length} edges`);
+      console.log(`[Load] Parsed data for map ${mapId}: ${parsedNodes.length} nodes, ${parsedEdges.length} edges`);
+      console.log(`[Load] Setting state:`, {
+        nodes: parsedNodes,
+        edges: parsedEdges,
+        loadedMapId: mapId
+      });
 
       setNodes(parsedNodes);
       setEdges(parsedEdges);
