@@ -1,4 +1,5 @@
-import { BubbleMenu, Editor } from '@tiptap/react';
+import { BubbleMenu } from '@tiptap/react/menus';
+import { Editor } from '@tiptap/react';
 import { Button } from '@/components/ui/button';
 import { Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code, Link as LinkIcon } from 'lucide-react';
 
