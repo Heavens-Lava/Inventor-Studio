@@ -7,11 +7,13 @@ import TextAlign from '@tiptap/extension-text-align';
 import Highlight from '@tiptap/extension-highlight';
 import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { EditorToolbar } from './EditorToolbar';
 import { EditorBubbleMenu } from './EditorBubbleMenu';
 import { DrawingEditor } from './DrawingEditor';
 import type { DrawingElement } from '@/types/note';
+import { Button } from '@/components/ui/button';
+import { Pencil, Type } from 'lucide-react';
 
 interface NoteEditorProps {
   content: string;
@@ -30,6 +32,8 @@ export function NoteEditor({
   placeholder = 'Start typing your note...',
   editable = true,
 }: NoteEditorProps) {
+  const [mode, setMode] = useState<'text' | 'drawing'>('text');
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -96,22 +100,68 @@ export function NoteEditor({
 
   return (
     <div className="note-editor flex flex-col h-full">
-      {/* Text Editor */}
-      <div className="flex-1 flex flex-col min-h-0">
-        {editable && <EditorToolbar editor={editor} />}
-        {editable && <EditorBubbleMenu editor={editor} />}
-        <div className="flex-1 overflow-y-auto">
-          <EditorContent editor={editor} />
+      {/* Mode Toggle */}
+      {editable && (
+        <div className="border-b border-gray-200 bg-white px-4 py-2 flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-700">Mode:</span>
+          <div className="flex gap-1">
+            <Button
+              variant={mode === 'text' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setMode('text')}
+              className="gap-2"
+            >
+              <Type className="w-4 h-4" />
+              Text
+            </Button>
+            <Button
+              variant={mode === 'drawing' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setMode('drawing')}
+              className="gap-2"
+            >
+              <Pencil className="w-4 h-4" />
+              Drawing
+            </Button>
+          </div>
+          <span className="text-xs text-gray-500 ml-2">
+            {mode === 'text'
+              ? 'Type your notes - drawing layer is visible below'
+              : 'Draw on the canvas - text is visible below'}
+          </span>
         </div>
-      </div>
+      )}
 
-      {/* Drawing Canvas */}
-      <div className="h-[400px] border-t-2 border-gray-300">
-        <DrawingEditor
-          drawingData={drawingData}
-          onChange={onDrawingChange}
-          onTextRecognized={handleTextRecognized}
-        />
+      {/* Integrated Editor with Overlay Canvas */}
+      <div className="flex-1 flex flex-col min-h-0 relative">
+        {/* Text Editor Layer */}
+        <div
+          className={`absolute inset-0 flex flex-col ${
+            mode === 'drawing' ? 'pointer-events-none opacity-70' : ''
+          }`}
+        >
+          {editable && <EditorToolbar editor={editor} />}
+          {editable && mode === 'text' && <EditorBubbleMenu editor={editor} />}
+          <div className="flex-1 overflow-y-auto">
+            <EditorContent editor={editor} />
+          </div>
+        </div>
+
+        {/* Drawing Canvas Layer (Overlay) */}
+        <div
+          className={`absolute inset-0 flex flex-col ${
+            mode === 'text' ? 'pointer-events-none' : ''
+          }`}
+          style={{
+            backgroundColor: mode === 'drawing' ? 'rgba(255, 255, 255, 0.95)' : 'transparent'
+          }}
+        >
+          <DrawingEditor
+            drawingData={drawingData}
+            onChange={onDrawingChange}
+            onTextRecognized={handleTextRecognized}
+          />
+        </div>
       </div>
     </div>
   );

@@ -189,7 +189,7 @@ export function DrawingEditor({ drawingData = [], onChange, onTextRecognized }: 
         onBeautify={handleBeautify}
         isProcessing={isProcessing}
       />
-      <div className="flex-1 overflow-hidden p-4 bg-gray-50">
+      <div className="flex-1 overflow-hidden">
         <DrawingCanvas
           ref={canvasRef}
           tool={tool}

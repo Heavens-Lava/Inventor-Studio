@@ -126,15 +126,18 @@ export const DrawingCanvas = forwardRef<HTMLCanvasElement, DrawingCanvasProps>(f
       }
       ctx.stroke();
     } else if (element.type === 'eraser') {
-      // Erase by drawing with white (larger size for better erasing)
-      ctx.strokeStyle = '#ffffff';
+      // Erase by clearing pixels (transparent)
+      ctx.globalCompositeOperation = 'destination-out';
       ctx.lineWidth = element.strokeWidth * 5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
       ctx.beginPath();
       ctx.moveTo(element.points[0].x, element.points[0].y);
       for (let i = 1; i < element.points.length; i++) {
         ctx.lineTo(element.points[i].x, element.points[i].y);
       }
       ctx.stroke();
+      ctx.globalCompositeOperation = 'source-over';
     } else if (element.type === 'line' && element.points.length >= 2) {
       // Draw line
       const [start, end] = element.points;
@@ -174,9 +177,8 @@ export const DrawingCanvas = forwardRef<HTMLCanvasElement, DrawingCanvasProps>(f
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Clear canvas
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Clear canvas (transparent)
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw grid
     drawGrid(ctx, canvas.width, canvas.height);
@@ -286,7 +288,7 @@ export const DrawingCanvas = forwardRef<HTMLCanvasElement, DrawingCanvasProps>(f
     <div className="relative w-full h-full">
       <canvas
         ref={internalCanvasRef}
-        className="absolute inset-0 cursor-crosshair border border-gray-300 bg-white"
+        className="absolute inset-0 cursor-crosshair"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
