@@ -1,7 +1,11 @@
-import { CheckSquare, Wallet, Lightbulb, Target, BookOpen, Calendar, TrendingUp, DollarSign, PiggyBank, Activity, Sparkles, Zap } from "lucide-react";
+import { CheckSquare, Wallet, Lightbulb, Target, BookOpen, Calendar, TrendingUp, DollarSign, PiggyBank, Activity, Sparkles, Zap, Moon, Sun } from "lucide-react";
 import AppCard from "@/components/AppCard";
+import { useTheme } from "@/contexts/ThemeContext";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
+  const { theme, toggleTheme } = useTheme();
+
   const apps = [
     {
       title: "To-Do",
@@ -94,13 +98,28 @@ const Index = () => {
       {/* Header */}
       <header className="relative border-b border-slate-200/50 dark:border-slate-800/50 backdrop-blur-sm bg-white/30 dark:bg-gray-900/30">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg">
-              <Sparkles className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-1 justify-center md:justify-start">
+              <div className="p-2 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                Inventor Studio
+              </h1>
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Inventor Studio
-            </h1>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="ml-auto hover:bg-white/50 dark:hover:bg-gray-800/50"
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-5 h-5 text-slate-700 dark:text-slate-300" />
+              ) : (
+                <Moon className="w-5 h-5 text-slate-700 dark:text-slate-300" />
+              )}
+            </Button>
           </div>
         </div>
       </header>
