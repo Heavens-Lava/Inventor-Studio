@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { addEdge, Connection, Edge, applyNodeChanges, applyEdgeChanges, NodeChange, EdgeChange } from 'reactflow';
 import {
   GoalMapNode,
@@ -27,23 +27,26 @@ export function useGoalMapStorage(mapId: string = 'default') {
   const [edges, setEdges] = useState<GoalMapEdge[]>([]);
   const [viewport, setViewport] = useState<GoalMapViewport>(defaultViewport);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [currentMapId, setCurrentMapId] = useState(mapId);
 
-  // Generate storage keys for this specific map
-  const NODES_KEY = `goalmap_nodes_${mapId}`;
-  const EDGES_KEY = `goalmap_edges_${mapId}`;
-  const VIEWPORT_KEY = `goalmap_viewport_${mapId}`;
+  // Use ref to track the active map ID to prevent race conditions
+  const activeMapIdRef = useRef(mapId);
+  const isSwitchingRef = useRef(false);
 
-  // Immediately set isLoaded to false when mapId changes to prevent saving old data to new map
+  // Detect map switch and prevent saves during transition
   useEffect(() => {
-    if (mapId !== currentMapId) {
+    if (mapId !== activeMapIdRef.current) {
+      isSwitchingRef.current = true;
       setIsLoaded(false);
-      setCurrentMapId(mapId);
+      activeMapIdRef.current = mapId;
     }
-  }, [mapId, currentMapId]);
+  }, [mapId]);
 
   // Load data from localStorage when mapId changes
   useEffect(() => {
+    const NODES_KEY = `goalmap_nodes_${mapId}`;
+    const EDGES_KEY = `goalmap_edges_${mapId}`;
+    const VIEWPORT_KEY = `goalmap_viewport_${mapId}`;
+
     const loadData = () => {
       try {
         // Check if we need to migrate old data (only for default map)
@@ -90,24 +93,31 @@ export function useGoalMapStorage(mapId: string = 'default') {
         setViewport(defaultViewport);
       } finally {
         setIsLoaded(true);
+        isSwitchingRef.current = false;
       }
     };
 
     loadData();
-  }, [mapId, NODES_KEY, EDGES_KEY, VIEWPORT_KEY]);
+  }, [mapId]);
 
   // Save data to localStorage whenever it changes
   useEffect(() => {
-    if (!isLoaded) return;
+    // Don't save if not loaded or currently switching maps
+    if (!isLoaded || isSwitchingRef.current) return;
 
     try {
+      const currentMapId = activeMapIdRef.current;
+      const NODES_KEY = `goalmap_nodes_${currentMapId}`;
+      const EDGES_KEY = `goalmap_edges_${currentMapId}`;
+      const VIEWPORT_KEY = `goalmap_viewport_${currentMapId}`;
+
       localStorage.setItem(NODES_KEY, JSON.stringify(nodes));
       localStorage.setItem(EDGES_KEY, JSON.stringify(edges));
       localStorage.setItem(VIEWPORT_KEY, JSON.stringify(viewport));
     } catch (error) {
       console.error('Error saving goal map data:', error);
     }
-  }, [nodes, edges, viewport, isLoaded, NODES_KEY, EDGES_KEY, VIEWPORT_KEY]);
+  }, [nodes, edges, viewport, isLoaded]);
 
   /**
    * Add a new goal node to the canvas
