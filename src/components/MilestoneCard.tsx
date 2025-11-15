@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Flag, CheckCircle2, Calendar, Circle } from 'lucide-react';
 import { format } from 'date-fns';
+import { EmojiPicker } from '@/components/EmojiPicker';
 
 /**
  * MilestoneCard Component
@@ -106,6 +107,14 @@ export const MilestoneCard = memo(({ data, selected, id }: NodeProps<MilestoneNo
     [handleDescriptionBlur, data.description]
   );
 
+  const handleEmojiSelect = useCallback((emoji: string) => {
+    window.dispatchEvent(
+      new CustomEvent('updateNodeData', {
+        detail: { id, data: { emoji } },
+      })
+    );
+  }, [id]);
+
   const formatDate = (date?: Date | string) => {
     if (!date) return null;
     try {
@@ -186,7 +195,28 @@ export const MilestoneCard = memo(({ data, selected, id }: NodeProps<MilestoneNo
       <div className="p-4">
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Flag className={`w-5 h-5 flex-shrink-0 ${data.completed ? 'text-green-600' : 'text-amber-600'}`} />
+            <div className="flex-shrink-0 nodrag" onClick={(e) => e.stopPropagation()}>
+              {data.emoji ? (
+                <EmojiPicker
+                  value={data.emoji}
+                  onSelect={handleEmojiSelect}
+                  trigger={
+                    <button className="text-xl hover:scale-110 transition-transform">
+                      {data.emoji}
+                    </button>
+                  }
+                />
+              ) : (
+                <EmojiPicker
+                  onSelect={handleEmojiSelect}
+                  trigger={
+                    <button className="hover:bg-gray-100 p-1 rounded transition-colors">
+                      <Flag className={`w-5 h-5 ${data.completed ? 'text-green-600' : 'text-amber-600'}`} />
+                    </button>
+                  }
+                />
+              )}
+            </div>
             {isEditingTitle ? (
               <Input
                 ref={titleInputRef}

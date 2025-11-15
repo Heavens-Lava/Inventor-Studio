@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { EdgeProps, getSmoothStepPath, EdgeLabelRenderer, BaseEdge } from 'reactflow';
 import { GoalMapEdgeData, edgeStyles } from '@/types/goalMap';
 
@@ -17,6 +17,7 @@ export const CustomEdge = memo(({
   data,
   selected,
 }: EdgeProps<GoalMapEdgeData>) => {
+  const [isHovered, setIsHovered] = useState(false);
   const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,
     sourceY,
@@ -33,13 +34,37 @@ export const CustomEdge = memo(({
 
   return (
     <>
+      {/* Invisible wider path for easier hover */}
+      <path
+        d={edgePath}
+        fill="none"
+        strokeWidth={20}
+        stroke="transparent"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        style={{ cursor: 'pointer' }}
+      />
+
+      {/* Glow effect when hovering */}
+      {isHovered && (
+        <path
+          d={edgePath}
+          fill="none"
+          stroke={style.stroke}
+          strokeWidth={style.strokeWidth + 4}
+          opacity={0.3}
+          className="animate-pulse"
+        />
+      )}
+
       <BaseEdge
         id={id}
         path={edgePath}
         style={{
           stroke: style.stroke,
-          strokeWidth: selected ? style.strokeWidth + 1 : style.strokeWidth,
-          opacity: selected ? 1 : 0.8,
+          strokeWidth: selected || isHovered ? style.strokeWidth + 2 : style.strokeWidth,
+          opacity: selected || isHovered ? 1 : 0.8,
+          transition: 'all 0.2s ease-in-out',
         }}
         className={animationDirection === 'reverse' ? 'animated-reverse' : ''}
       />
@@ -51,12 +76,14 @@ export const CustomEdge = memo(({
             pointerEvents: 'all',
           }}
           className="nodrag nopan"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
         >
           <div
             className={`
               px-2 py-1 rounded text-xs font-medium shadow-md
               transition-all cursor-pointer
-              ${selected ? 'scale-110' : 'scale-100'}
+              ${selected || isHovered ? 'scale-110 shadow-lg' : 'scale-100'}
             `}
             style={{
               backgroundColor: 'white',

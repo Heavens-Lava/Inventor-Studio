@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Target, Flag, AlertCircle, CheckCircle2, Pause, XCircle } from 'lucide-react';
+import { EmojiPicker } from '@/components/EmojiPicker';
 
 const statusIcons = {
   'not-started': AlertCircle,
@@ -132,6 +133,14 @@ export const GoalMapCard = memo(({ data, selected, id }: NodeProps<GoalNodeData>
     [handleDescriptionBlur, data.description]
   );
 
+  const handleEmojiSelect = useCallback((emoji: string) => {
+    window.dispatchEvent(
+      new CustomEvent('updateNodeData', {
+        detail: { id, data: { emoji } },
+      })
+    );
+  }, [id]);
+
   return (
     <div
       className={`
@@ -202,7 +211,28 @@ export const GoalMapCard = memo(({ data, selected, id }: NodeProps<GoalNodeData>
       <div className="p-3 border-b border-gray-200">
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Target className="w-4 h-4 text-blue-600 flex-shrink-0" />
+            <div className="flex-shrink-0 nodrag" onClick={(e) => e.stopPropagation()}>
+              {data.emoji ? (
+                <EmojiPicker
+                  value={data.emoji}
+                  onSelect={handleEmojiSelect}
+                  trigger={
+                    <button className="text-xl hover:scale-110 transition-transform">
+                      {data.emoji}
+                    </button>
+                  }
+                />
+              ) : (
+                <EmojiPicker
+                  onSelect={handleEmojiSelect}
+                  trigger={
+                    <button className="hover:bg-gray-100 p-1 rounded transition-colors">
+                      <Target className="w-4 h-4 text-blue-600" />
+                    </button>
+                  }
+                />
+              )}
+            </div>
             {isEditingTitle ? (
               <Input
                 ref={titleInputRef}
@@ -272,7 +302,14 @@ export const GoalMapCard = memo(({ data, selected, id }: NodeProps<GoalNodeData>
             <span className="text-xs font-medium text-gray-700">Progress</span>
             <span className="text-xs font-semibold text-gray-900">{data.progress}%</span>
           </div>
-          <Progress value={data.progress} className="h-2" />
+          <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-500 ease-out"
+              style={{ width: `${data.progress}%` }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-pulse" />
+            </div>
+          </div>
         </div>
 
         {/* Category */}

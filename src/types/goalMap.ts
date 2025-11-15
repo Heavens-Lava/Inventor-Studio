@@ -8,6 +8,7 @@ export interface BaseNodeData {
   nodeType: 'goal' | 'milestone' | 'requirement' | 'note';
   title: string;
   description?: string;
+  emoji?: string;
 }
 
 /**

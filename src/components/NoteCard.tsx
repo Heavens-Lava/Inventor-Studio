@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { StickyNote } from 'lucide-react';
+import { EmojiPicker } from '@/components/EmojiPicker';
 
 /**
  * NoteCard Component
@@ -147,6 +148,14 @@ export const NoteCard = memo(({ data, selected, id }: NodeProps<NoteNodeData>) =
     [handleContentBlur, data.content]
   );
 
+  const handleEmojiSelect = useCallback((emoji: string) => {
+    window.dispatchEvent(
+      new CustomEvent('updateNodeData', {
+        detail: { id, data: { emoji } },
+      })
+    );
+  }, [id]);
+
   return (
     <div
       className={`
@@ -216,7 +225,28 @@ export const NoteCard = memo(({ data, selected, id }: NodeProps<NoteNodeData>) =
       {/* Card Content */}
       <div className="p-3">
         <div className="flex items-center gap-2 mb-2">
-          <StickyNote className={`w-4 h-4 flex-shrink-0 ${colorClass.text}`} />
+          <div className="flex-shrink-0 nodrag" onClick={(e) => e.stopPropagation()}>
+            {data.emoji ? (
+              <EmojiPicker
+                value={data.emoji}
+                onSelect={handleEmojiSelect}
+                trigger={
+                  <button className="text-lg hover:scale-110 transition-transform">
+                    {data.emoji}
+                  </button>
+                }
+              />
+            ) : (
+              <EmojiPicker
+                onSelect={handleEmojiSelect}
+                trigger={
+                  <button className="hover:bg-gray-100 p-1 rounded transition-colors">
+                    <StickyNote className={`w-4 h-4 ${colorClass.text}`} />
+                  </button>
+                }
+              />
+            )}
+          </div>
           {isEditingTitle ? (
             <Input
               ref={titleInputRef}
