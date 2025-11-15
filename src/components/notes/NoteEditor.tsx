@@ -32,8 +32,6 @@ export function NoteEditor({
   placeholder = 'Start typing your note...',
   editable = true,
 }: NoteEditorProps) {
-  const [mode, setMode] = useState<'text' | 'drawing'>('text');
-
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -99,69 +97,36 @@ export function NoteEditor({
   }
 
   return (
-    <div className="note-editor flex flex-col h-full">
-      {/* Mode Toggle */}
-      {editable && (
-        <div className="border-b border-gray-200 bg-white px-4 py-2 flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-700">Mode:</span>
-          <div className="flex gap-1">
-            <Button
-              variant={mode === 'text' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setMode('text')}
-              className="gap-2"
-            >
-              <Type className="w-4 h-4" />
-              Text
-            </Button>
-            <Button
-              variant={mode === 'drawing' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setMode('drawing')}
-              className="gap-2"
-            >
-              <Pencil className="w-4 h-4" />
-              Drawing
-            </Button>
-          </div>
-          <span className="text-xs text-gray-500 ml-2">
-            {mode === 'text'
-              ? 'Type your notes - drawing layer is visible below'
-              : 'Draw on the canvas - text is visible below'}
-          </span>
-        </div>
-      )}
-
-      {/* Integrated Editor with Overlay Canvas */}
-      <div className="flex-1 flex flex-col min-h-0 relative">
-        {/* Text Editor Layer */}
-        <div
-          className={`absolute inset-0 flex flex-col ${
-            mode === 'drawing' ? 'pointer-events-none opacity-70' : ''
-          }`}
-        >
-          {editable && <EditorToolbar editor={editor} />}
-          {editable && mode === 'text' && <EditorBubbleMenu editor={editor} />}
-          <div className="flex-1 overflow-y-auto">
-            <EditorContent editor={editor} />
+    <div className="note-editor flex h-full bg-gray-50">
+      {/* Left Panel - Text Editor */}
+      <div className="w-1/2 flex flex-col bg-white border-r-2 border-gray-300">
+        <div className="border-b border-gray-200 px-3 py-2 bg-gradient-to-r from-blue-50 to-white">
+          <div className="flex items-center gap-2">
+            <Type className="w-5 h-5 text-blue-600" />
+            <h3 className="font-semibold text-gray-800">Text Editor</h3>
           </div>
         </div>
-
-        {/* Drawing Canvas Layer (Overlay) */}
-        <div
-          className={`absolute inset-0 flex flex-col ${
-            mode === 'text' ? 'pointer-events-none' : ''
-          }`}
-          style={{
-            backgroundColor: mode === 'drawing' ? 'rgba(255, 255, 255, 0.95)' : 'transparent'
-          }}
-        >
-          <DrawingEditor
-            drawingData={drawingData}
-            onChange={onDrawingChange}
-            onTextRecognized={handleTextRecognized}
-          />
+        {editable && <EditorToolbar editor={editor} />}
+        {editable && <EditorBubbleMenu editor={editor} />}
+        <div className="flex-1 overflow-y-auto">
+          <EditorContent editor={editor} />
         </div>
+      </div>
+
+      {/* Right Panel - Drawing Canvas */}
+      <div className="w-1/2 flex flex-col bg-white">
+        <div className="border-b border-gray-200 px-3 py-2 bg-gradient-to-r from-purple-50 to-white">
+          <div className="flex items-center gap-2">
+            <Pencil className="w-5 h-5 text-purple-600" />
+            <h3 className="font-semibold text-gray-800">Drawing Canvas</h3>
+            <span className="text-xs text-gray-500 ml-auto">Infinite canvas with zoom & pan</span>
+          </div>
+        </div>
+        <DrawingEditor
+          drawingData={drawingData}
+          onChange={onDrawingChange}
+          onTextRecognized={handleTextRecognized}
+        />
       </div>
     </div>
   );
