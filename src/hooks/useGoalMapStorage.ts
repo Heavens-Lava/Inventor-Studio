@@ -38,10 +38,6 @@ export function useGoalMapStorage(mapId: string = 'default') {
   useEffect(() => {
     if (mapId !== currentMapId) {
       setIsLoaded(false);
-      // Clear state immediately to prevent old data from being saved to new map
-      setNodes([]);
-      setEdges([]);
-      setViewport(defaultViewport);
       setCurrentMapId(mapId);
     }
   }, [mapId, currentMapId]);
