@@ -287,6 +287,106 @@ export function useGoalMapStorage() {
     } as GoalNodeData);
   }, [updateNode]);
 
+  /**
+   * Duplicate a node
+   */
+  const duplicateNode = useCallback((nodeId: string) => {
+    const node = nodes.find((n) => n.id === nodeId);
+    if (!node) return null;
+
+    const newId = `${node.type}-${Date.now()}`;
+    const newNode: GoalMapNode = {
+      ...node,
+      id: newId,
+      position: {
+        x: node.position.x + 50,
+        y: node.position.y + 50,
+      },
+      data: {
+        ...node.data,
+        // Update title to indicate it's a copy
+        title: `${node.data.title} (Copy)`,
+      },
+      selected: false,
+    };
+
+    setNodes((nds) => [...nds, newNode]);
+    return newNode;
+  }, [nodes]);
+
+  /**
+   * Duplicate multiple nodes
+   */
+  const duplicateNodes = useCallback((nodeIds: string[]) => {
+    const newNodes: GoalMapNode[] = [];
+
+    nodeIds.forEach((nodeId) => {
+      const node = nodes.find((n) => n.id === nodeId);
+      if (!node) return;
+
+      const newId = `${node.type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const newNode: GoalMapNode = {
+        ...node,
+        id: newId,
+        position: {
+          x: node.position.x + 50,
+          y: node.position.y + 50,
+        },
+        data: {
+          ...node.data,
+          title: `${node.data.title} (Copy)`,
+        },
+        selected: false,
+      };
+
+      newNodes.push(newNode);
+    });
+
+    setNodes((nds) => [...nds, ...newNodes]);
+    return newNodes;
+  }, [nodes]);
+
+  /**
+   * Remove multiple nodes
+   */
+  const removeNodes = useCallback((nodeIds: string[]) => {
+    setNodes((nds) => nds.filter((node) => !nodeIds.includes(node.id)));
+    setEdges((eds) => eds.filter((edge) =>
+      !nodeIds.includes(edge.source) && !nodeIds.includes(edge.target)
+    ));
+  }, []);
+
+  /**
+   * Update multiple nodes
+   */
+  const updateNodes = useCallback((nodeIds: string[], data: Partial<NodeData>) => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (nodeIds.includes(node.id)) {
+          return {
+            ...node,
+            data: { ...node.data, ...data },
+          };
+        }
+        return node;
+      })
+    );
+  }, []);
+
+  /**
+   * Set nodes (used for undo/redo)
+   */
+  const setNodesState = useCallback((newNodes: GoalMapNode[]) => {
+    setNodes(newNodes);
+  }, []);
+
+  /**
+   * Set edges (used for undo/redo)
+   */
+  const setEdgesState = useCallback((newEdges: GoalMapEdge[]) => {
+    setEdges(newEdges);
+  }, []);
+
   return {
     nodes,
     edges,
@@ -297,7 +397,11 @@ export function useGoalMapStorage() {
     addRequirementNode,
     addNoteNode,
     removeNode,
+    removeNodes,
     updateNode,
+    updateNodes,
+    duplicateNode,
+    duplicateNodes,
     onNodesChange,
     onEdgesChange,
     onConnect,
@@ -308,5 +412,7 @@ export function useGoalMapStorage() {
     getCanvasGoalIds,
     clearCanvas,
     syncNodeWithGoal,
+    setNodesState,
+    setEdgesState,
   };
 }

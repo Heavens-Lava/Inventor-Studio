@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -7,10 +7,12 @@ import ReactFlow, {
   useReactFlow,
   ReactFlowProvider,
   EdgeMouseHandler,
+  useKeyPress,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { useGoalMapStorage } from "@/hooks/useGoalMapStorage";
 import { useGoalStorage } from "@/hooks/useGoalStorage";
+import { useUndoRedo } from "@/hooks/useUndoRedo";
 import { GoalMapCard } from "@/components/GoalMapCard";
 import { MilestoneCard } from "@/components/MilestoneCard";
 import { RequirementCard } from "@/components/RequirementCard";
@@ -50,6 +52,10 @@ import {
   Wrench,
   StickyNote,
   Edit,
+  Undo2,
+  Redo2,
+  Copy,
+  Keyboard,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -93,11 +99,20 @@ function GoalMapCanvasInner() {
     removeEdge,
     clearCanvas,
     hasGoalNode,
+    duplicateNode,
+    duplicateNodes,
+    removeNodes,
+    updateNode,
+    setNodesState,
+    setEdgesState,
   } = useGoalMapStorage();
+
+  const { canUndo, canRedo, undo, redo, pushHistory, clearHistory } = useUndoRedo();
 
   const [isAddGoalDialogOpen, setIsAddGoalDialogOpen] = useState(false);
   const [isAddCardDialogOpen, setIsAddCardDialogOpen] = useState(false);
   const [isEditEdgeDialogOpen, setIsEditEdgeDialogOpen] = useState(false);
+  const [isShortcutsDialogOpen, setIsShortcutsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCardType, setSelectedCardType] =
     useState<CardType>("milestone");
@@ -107,6 +122,7 @@ function GoalMapCanvasInner() {
   const [edgeAnimationDirection, setEdgeAnimationDirection] = useState<
     "forward" | "reverse"
   >("forward");
+  const [lastHistoryPush, setLastHistoryPush] = useState(0);
 
   // Form states for new cards
   const [milestoneForm, setMilestoneForm] = useState({
@@ -133,6 +149,36 @@ function GoalMapCanvasInner() {
     color: "yellow",
     tags: [] as string[],
   });
+
+  // Push to history when nodes or edges change (debounced)
+  useEffect(() => {
+    if (!mapLoaded) return;
+
+    const timer = setTimeout(() => {
+      pushHistory({ nodes, edges });
+      setLastHistoryPush(Date.now());
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [nodes, edges, mapLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Listen for inline editing events from cards
+  useEffect(() => {
+    const handleUpdateNodeData = (event: Event) => {
+      const customEvent = event as CustomEvent<{ id: string; data: any }>;
+      const { id, data } = customEvent.detail;
+      updateNode(id, data);
+      toast.success('Card updated');
+    };
+
+    window.addEventListener('updateNodeData', handleUpdateNodeData);
+    return () => window.removeEventListener('updateNodeData', handleUpdateNodeData);
+  }, [updateNode]);
+
+  // Get selected nodes
+  const selectedNodes = useMemo(() => {
+    return nodes.filter((node) => node.selected);
+  }, [nodes]);
 
   // Filter goals that are not already on the canvas
   const availableGoals = useMemo(() => {
@@ -288,9 +334,56 @@ function GoalMapCanvasInner() {
       )
     ) {
       clearCanvas();
+      clearHistory();
       toast.success("Canvas cleared");
     }
-  }, [nodes.length, clearCanvas]);
+  }, [nodes.length, clearCanvas, clearHistory]);
+
+  // Handle undo
+  const handleUndo = useCallback(() => {
+    const prevState = undo();
+    if (prevState) {
+      setNodesState(prevState.nodes);
+      setEdgesState(prevState.edges);
+      toast.success("Undone");
+    }
+  }, [undo, setNodesState, setEdgesState]);
+
+  // Handle redo
+  const handleRedo = useCallback(() => {
+    const nextState = redo();
+    if (nextState) {
+      setNodesState(nextState.nodes);
+      setEdgesState(nextState.edges);
+      toast.success("Redone");
+    }
+  }, [redo, setNodesState, setEdgesState]);
+
+  // Handle duplicate selected nodes
+  const handleDuplicate = useCallback(() => {
+    if (selectedNodes.length === 0) {
+      toast.info("Select cards to duplicate");
+      return;
+    }
+
+    const nodeIds = selectedNodes.map((n) => n.id);
+    duplicateNodes(nodeIds);
+    toast.success(`Duplicated ${selectedNodes.length} card${selectedNodes.length > 1 ? 's' : ''}`);
+  }, [selectedNodes, duplicateNodes]);
+
+  // Handle delete selected nodes
+  const handleDeleteSelected = useCallback(() => {
+    if (selectedNodes.length === 0) {
+      toast.info("Select cards to delete");
+      return;
+    }
+
+    if (confirm(`Delete ${selectedNodes.length} selected card${selectedNodes.length > 1 ? 's' : ''}?`)) {
+      const nodeIds = selectedNodes.map((n) => n.id);
+      removeNodes(nodeIds);
+      toast.success(`Deleted ${selectedNodes.length} card${selectedNodes.length > 1 ? 's' : ''}`);
+    }
+  }, [selectedNodes, removeNodes]);
 
   // Handle fit view
   const handleFitView = useCallback(() => {
@@ -301,6 +394,63 @@ function GoalMapCanvasInner() {
   const handleMoveEnd = useCallback((event: any, viewport: any) => {
     // Viewport is auto-saved via the hook
   }, []);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Don't trigger shortcuts when typing in inputs
+      const target = event.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const cmdOrCtrl = isMac ? event.metaKey : event.ctrlKey;
+
+      // Ctrl/Cmd + Z = Undo
+      if (cmdOrCtrl && event.key === 'z' && !event.shiftKey) {
+        event.preventDefault();
+        handleUndo();
+      }
+      // Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y = Redo
+      else if ((cmdOrCtrl && event.key === 'z' && event.shiftKey) || (cmdOrCtrl && event.key === 'y')) {
+        event.preventDefault();
+        handleRedo();
+      }
+      // Ctrl/Cmd + D = Duplicate
+      else if (cmdOrCtrl && event.key === 'd') {
+        event.preventDefault();
+        handleDuplicate();
+      }
+      // Delete or Backspace = Delete selected
+      else if ((event.key === 'Delete' || event.key === 'Backspace') && !cmdOrCtrl) {
+        event.preventDefault();
+        handleDeleteSelected();
+      }
+      // Ctrl/Cmd + A = Select all
+      else if (cmdOrCtrl && event.key === 'a') {
+        event.preventDefault();
+        // ReactFlow handles this internally
+      }
+      // ? = Show keyboard shortcuts
+      else if (event.key === '?' && !event.shiftKey) {
+        event.preventDefault();
+        setIsShortcutsDialogOpen(true);
+      }
+      // F = Fit view
+      else if (event.key === 'f' && !cmdOrCtrl) {
+        event.preventDefault();
+        handleFitView();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleUndo, handleRedo, handleDuplicate, handleDeleteSelected, handleFitView]);
 
   if (!goalsLoaded || !mapLoaded) {
     return (
@@ -377,6 +527,32 @@ function GoalMapCanvasInner() {
           {/* Toolbar Panel */}
           <Panel position="top-right" className="space-y-2">
             <Card className="p-2 space-y-2 shadow-lg">
+              {/* Undo/Redo Controls */}
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleUndo}
+                  disabled={!canUndo}
+                  className="flex-1"
+                  title="Undo (Ctrl+Z)"
+                >
+                  <Undo2 className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleRedo}
+                  disabled={!canRedo}
+                  className="flex-1"
+                  title="Redo (Ctrl+Y)"
+                >
+                  <Redo2 className="w-4 h-4" />
+                </Button>
+              </div>
+
+              <div className="h-px bg-gray-200" />
+
               <Dialog
                 open={isAddGoalDialogOpen}
                 onOpenChange={setIsAddGoalDialogOpen}
@@ -762,6 +938,33 @@ function GoalMapCanvasInner() {
 
               <div className="h-px bg-gray-200" />
 
+              {/* Bulk Operations */}
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                onClick={handleDuplicate}
+                disabled={selectedNodes.length === 0}
+                title="Duplicate selected (Ctrl+D)"
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Duplicate {selectedNodes.length > 0 && `(${selectedNodes.length})`}
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={handleDeleteSelected}
+                disabled={selectedNodes.length === 0}
+                title="Delete selected (Del)"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete {selectedNodes.length > 0 && `(${selectedNodes.length})`}
+              </Button>
+
+              <div className="h-px bg-gray-200" />
+
               <Button
                 size="sm"
                 variant="outline"
@@ -793,6 +996,16 @@ function GoalMapCanvasInner() {
               </Button>
 
               <div className="h-px bg-gray-200" />
+
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                onClick={() => setIsShortcutsDialogOpen(true)}
+              >
+                <Keyboard className="w-4 h-4 mr-2" />
+                Shortcuts
+              </Button>
 
               <Button
                 size="sm"
@@ -930,6 +1143,67 @@ function GoalMapCanvasInner() {
         </DialogContent>
       </Dialog>
 
+      {/* Keyboard Shortcuts Dialog */}
+      <Dialog
+        open={isShortcutsDialogOpen}
+        onOpenChange={setIsShortcutsDialogOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Keyboard Shortcuts</DialogTitle>
+            <DialogDescription>
+              Boost your productivity with these keyboard shortcuts
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="font-medium">Undo</div>
+              <div className="text-gray-600">Ctrl/Cmd + Z</div>
+
+              <div className="font-medium">Redo</div>
+              <div className="text-gray-600">Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y</div>
+
+              <div className="font-medium">Duplicate selected</div>
+              <div className="text-gray-600">Ctrl/Cmd + D</div>
+
+              <div className="font-medium">Delete selected</div>
+              <div className="text-gray-600">Delete or Backspace</div>
+
+              <div className="font-medium">Select all</div>
+              <div className="text-gray-600">Ctrl/Cmd + A</div>
+
+              <div className="font-medium">Fit view</div>
+              <div className="text-gray-600">F</div>
+
+              <div className="font-medium">Show shortcuts</div>
+              <div className="text-gray-600">?</div>
+            </div>
+
+            <div className="border-t pt-3">
+              <h4 className="font-medium text-sm mb-2">Inline Editing</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="font-medium">Edit card title</div>
+                <div className="text-gray-600">Double-click title</div>
+
+                <div className="font-medium">Edit description</div>
+                <div className="text-gray-600">Double-click description</div>
+
+                <div className="font-medium">Save edits</div>
+                <div className="text-gray-600">Enter (Ctrl+Enter for description)</div>
+
+                <div className="font-medium">Cancel edits</div>
+                <div className="text-gray-600">Escape</div>
+              </div>
+            </div>
+          </div>
+
+          <Button onClick={() => setIsShortcutsDialogOpen(false)}>
+            Got it!
+          </Button>
+        </DialogContent>
+      </Dialog>
+
       {/* Instructions Footer */}
       <div className="bg-white border-t border-gray-200 px-4 py-2">
         <div className="flex items-center justify-center gap-6 text-xs text-gray-600">
@@ -943,7 +1217,7 @@ function GoalMapCanvasInner() {
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-blue-500 rounded-full" />
-            <span>Click connections to edit</span>
+            <span>Double-click to edit • Press ? for shortcuts</span>
           </div>
         </div>
       </div>

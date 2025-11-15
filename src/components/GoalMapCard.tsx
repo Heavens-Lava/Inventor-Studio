@@ -1,8 +1,10 @@
-import { memo } from 'react';
+import { memo, useState, useRef, useEffect, useCallback } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { GoalNodeData } from '@/types/goalMap';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Target, Flag, AlertCircle, CheckCircle2, Pause, XCircle } from 'lucide-react';
 
 const statusIcons = {
@@ -37,8 +39,98 @@ const typeColors = {
  * GoalMapCard Component
  * Custom node component for displaying goals on the canvas
  */
-export const GoalMapCard = memo(({ data, selected }: NodeProps<GoalNodeData>) => {
+export const GoalMapCard = memo(({ data, selected, id }: NodeProps<GoalNodeData>) => {
   const StatusIcon = statusIcons[data.status];
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(data.title);
+  const [editedDescription, setEditedDescription] = useState(data.description || '');
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const descriptionInputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Focus input when editing starts
+  useEffect(() => {
+    if (isEditingTitle && titleInputRef.current) {
+      titleInputRef.current.focus();
+      titleInputRef.current.select();
+    }
+  }, [isEditingTitle]);
+
+  useEffect(() => {
+    if (isEditingDescription && descriptionInputRef.current) {
+      descriptionInputRef.current.focus();
+      descriptionInputRef.current.select();
+    }
+  }, [isEditingDescription]);
+
+  // Update local state when data changes
+  useEffect(() => {
+    setEditedTitle(data.title);
+    setEditedDescription(data.description || '');
+  }, [data.title, data.description]);
+
+  const handleTitleDoubleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditingTitle(true);
+  }, []);
+
+  const handleDescriptionDoubleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditingDescription(true);
+  }, []);
+
+  const handleTitleBlur = useCallback(() => {
+    setIsEditingTitle(false);
+    if (editedTitle.trim() !== data.title && editedTitle.trim() !== '') {
+      // Dispatch custom event for parent to handle
+      window.dispatchEvent(
+        new CustomEvent('updateNodeData', {
+          detail: { id, data: { title: editedTitle.trim() } },
+        })
+      );
+    } else {
+      setEditedTitle(data.title);
+    }
+  }, [editedTitle, data.title, id]);
+
+  const handleDescriptionBlur = useCallback(() => {
+    setIsEditingDescription(false);
+    if (editedDescription.trim() !== (data.description || '')) {
+      window.dispatchEvent(
+        new CustomEvent('updateNodeData', {
+          detail: { id, data: { description: editedDescription.trim() } },
+        })
+      );
+    } else {
+      setEditedDescription(data.description || '');
+    }
+  }, [editedDescription, data.description, id]);
+
+  const handleTitleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleTitleBlur();
+      } else if (e.key === 'Escape') {
+        setEditedTitle(data.title);
+        setIsEditingTitle(false);
+      }
+    },
+    [handleTitleBlur, data.title]
+  );
+
+  const handleDescriptionKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' && e.ctrlKey) {
+        e.preventDefault();
+        handleDescriptionBlur();
+      } else if (e.key === 'Escape') {
+        setEditedDescription(data.description || '');
+        setIsEditingDescription(false);
+      }
+    },
+    [handleDescriptionBlur, data.description]
+  );
 
   return (
     <div
@@ -111,17 +203,52 @@ export const GoalMapCard = memo(({ data, selected }: NodeProps<GoalNodeData>) =>
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <Target className="w-4 h-4 text-blue-600 flex-shrink-0" />
-            <h3 className="font-semibold text-sm truncate">{data.title}</h3>
+            {isEditingTitle ? (
+              <Input
+                ref={titleInputRef}
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                onBlur={handleTitleBlur}
+                onKeyDown={handleTitleKeyDown}
+                className="h-6 text-sm font-semibold px-1 py-0 nodrag"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <h3
+                className="font-semibold text-sm truncate cursor-text hover:bg-gray-50 px-1 rounded"
+                onDoubleClick={handleTitleDoubleClick}
+                title="Double-click to edit"
+              >
+                {data.title}
+              </h3>
+            )}
           </div>
           <Badge variant="outline" className={`${typeColors[data.type]} text-xs flex-shrink-0`}>
             {data.type}
           </Badge>
         </div>
 
-        {data.description && (
-          <p className="text-xs text-gray-600 line-clamp-2 mb-2">
-            {data.description}
-          </p>
+        {(data.description || isEditingDescription) && (
+          isEditingDescription ? (
+            <Textarea
+              ref={descriptionInputRef}
+              value={editedDescription}
+              onChange={(e) => setEditedDescription(e.target.value)}
+              onBlur={handleDescriptionBlur}
+              onKeyDown={handleDescriptionKeyDown}
+              className="text-xs min-h-[40px] nodrag"
+              onClick={(e) => e.stopPropagation()}
+              rows={2}
+            />
+          ) : (
+            <p
+              className="text-xs text-gray-600 line-clamp-2 mb-2 cursor-text hover:bg-gray-50 px-1 rounded"
+              onDoubleClick={handleDescriptionDoubleClick}
+              title="Double-click to edit (Ctrl+Enter to save)"
+            >
+              {data.description}
+            </p>
+          )
         )}
 
         {/* Priority Indicator */}
