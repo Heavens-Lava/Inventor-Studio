@@ -5,7 +5,9 @@
       "Bash(npm run dev:*)",
       "Bash(gh run list:*)",
       "Bash(echo:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npm install:*)",
+      "Bash(npx shadcn@latest add separator)"
     ],
     "deny": [],
     "ask": []

@@ -1,4 +1,4 @@
-import { CheckSquare, Wallet, Lightbulb, Target, BookOpen, Calendar, TrendingUp, DollarSign, PiggyBank, Activity, Sparkles, Zap } from "lucide-react";
+import { CheckSquare, Wallet, Lightbulb, Target, BookOpen, Calendar, TrendingUp, DollarSign, PiggyBank, Activity, Sparkles, Zap, StickyNote } from "lucide-react";
 import AppCard from "@/components/AppCard";
 
 const Index = () => {
@@ -79,6 +79,13 @@ const Index = () => {
       icon: Activity,
       route: "/fitness",
       gradient: "bg-gradient-to-br from-orange-500 to-orange-600",
+    },
+    {
+      title: "Notes",
+      description: "Advanced note-taking with rich editing, drawing, voice input, and more",
+      icon: StickyNote,
+      route: "/notes",
+      gradient: "bg-gradient-to-br from-yellow-500 to-yellow-600",
     },
   ];
 

@@ -1,0 +1,300 @@
+import { useState, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useNotesStorage } from '@/hooks/useNotesStorage';
+import { NoteEditor } from '@/components/notes/NoteEditor';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import {
+  ArrowLeft,
+  Plus,
+  Search,
+  Star,
+  Trash2,
+  Book,
+  StickyNote,
+} from 'lucide-react';
+import { toast } from 'sonner';
+
+export default function NotesApp() {
+  const navigate = useNavigate();
+  const {
+    notes,
+    isLoaded,
+    activeNoteId,
+    setActiveNoteId,
+    createNote,
+    deleteNote,
+    updateNote,
+    toggleFavorite,
+    filterAndSortNotes,
+  } = useNotesStorage();
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [editingTitle, setEditingTitle] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState('');
+
+  // Get filtered notes (non-archived by default, sorted by updated date)
+  const filteredNotes = filterAndSortNotes(
+    {
+      isArchived: false,
+      searchQuery,
+    },
+    {
+      sortBy: 'updatedAt',
+      direction: 'desc',
+    }
+  );
+
+  // Get active note
+  const activeNote = notes.find((n) => n.id === activeNoteId);
+
+  // Handle creating a new note
+  const handleCreateNote = async () => {
+    try {
+      await createNote('Untitled Note');
+      toast.success('New note created');
+    } catch (error) {
+      toast.error('Failed to create note');
+      console.error(error);
+    }
+  };
+
+  // Handle deleting a note
+  const handleDeleteNote = async (noteId: string) => {
+    if (!confirm('Are you sure you want to delete this note?')) return;
+
+    try {
+      await deleteNote(noteId);
+      toast.success('Note deleted');
+    } catch (error) {
+      toast.error('Failed to delete note');
+      console.error(error);
+    }
+  };
+
+  // Handle toggling favorite
+  const handleToggleFavorite = async (noteId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await toggleFavorite(noteId);
+    } catch (error) {
+      toast.error('Failed to update favorite status');
+      console.error(error);
+    }
+  };
+
+  // Handle saving content with debounce
+  const handleContentChange = useCallback((content: string) => {
+    setEditingContent(content);
+  }, []);
+
+  // Auto-save effect with debounce
+  useEffect(() => {
+    if (!activeNoteId || !activeNote) return;
+
+    const timer = setTimeout(async () => {
+      const plainText = editingContent.replace(/<[^>]*>/g, '');
+      const wordCount = plainText.trim().split(/\s+/).filter(Boolean).length;
+
+      try {
+        await updateNote(activeNoteId, {
+          content: editingContent,
+          plainText,
+          wordCount,
+          characterCount: plainText.length,
+        });
+      } catch (error) {
+        console.error('Failed to save content:', error);
+      }
+    }, 1000); // Auto-save after 1 second of no typing
+
+    return () => clearTimeout(timer);
+  }, [editingContent, activeNoteId, activeNote, updateNote]);
+
+  // Start editing a note
+  const handleSelectNote = (noteId: string) => {
+    setActiveNoteId(noteId);
+    const note = notes.find((n) => n.id === noteId);
+    if (note) {
+      setEditingContent(note.content);
+    }
+  };
+
+  // Handle updating title
+  const handleUpdateTitle = async (noteId: string, newTitle: string) => {
+    try {
+      await updateNote(noteId, { title: newTitle.trim() || 'Untitled Note' });
+      setEditingTitle(null);
+    } catch (error) {
+      toast.error('Failed to update title');
+      console.error(error);
+    }
+  };
+
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading notes...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen w-full flex flex-col bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+          <div className="h-6 w-px bg-gray-300" />
+          <Book className="w-5 h-5 text-blue-600" />
+          <h1 className="text-xl font-bold text-gray-900">Notes</h1>
+        </div>
+        <Button onClick={handleCreateNote}>
+          <Plus className="w-4 h-4 mr-2" />
+          New Note
+        </Button>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Sidebar */}
+        <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+          {/* Search */}
+          <div className="p-4 border-b border-gray-200">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Search notes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          {/* Notes List */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-2">
+            {filteredNotes.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <StickyNote className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                <p>No notes yet</p>
+                <p className="text-sm mt-1">Create your first note to get started</p>
+              </div>
+            ) : (
+              filteredNotes.map((note) => (
+                <Card
+                  key={note.id}
+                  className={`p-3 cursor-pointer transition-all hover:shadow-md ${
+                    activeNoteId === note.id ? 'border-2 border-blue-500 bg-blue-50' : ''
+                  }`}
+                  onClick={() => handleSelectNote(note.id)}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-sm truncate">{note.title}</h3>
+                      <p className="text-xs text-gray-600 line-clamp-2 mt-1">
+                        {note.plainText || 'No content'}
+                      </p>
+                      <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                        <span>{note.wordCount} words</span>
+                        <span>•</span>
+                        <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0"
+                        onClick={(e) => handleToggleFavorite(note.id, e)}
+                      >
+                        <Star
+                          className={`w-3 h-3 ${
+                            note.isFavorite ? 'fill-yellow-400 text-yellow-400' : ''
+                          }`}
+                        />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteNote(note.id);
+                        }}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Editor */}
+        <div className="flex-1 bg-white flex flex-col">
+          {activeNote ? (
+            <>
+              {/* Editor Header */}
+              <div className="border-b border-gray-200 p-4">
+                {editingTitle === activeNote.id ? (
+                  <Input
+                    value={activeNote.title}
+                    onChange={(e) => updateNote(activeNote.id, { title: e.target.value })}
+                    onBlur={() => setEditingTitle(null)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleUpdateTitle(activeNote.id, activeNote.title);
+                      }
+                      if (e.key === 'Escape') {
+                        setEditingTitle(null);
+                      }
+                    }}
+                    autoFocus
+                    className="text-2xl font-bold border-none shadow-none focus-visible:ring-0"
+                  />
+                ) : (
+                  <h2
+                    className="text-2xl font-bold cursor-pointer hover:text-blue-600"
+                    onClick={() => setEditingTitle(activeNote.id)}
+                  >
+                    {activeNote.title}
+                  </h2>
+                )}
+                <p className="text-sm text-gray-500 mt-1">
+                  Last edited {new Date(activeNote.updatedAt).toLocaleString()}
+                </p>
+              </div>
+
+              {/* Rich Text Editor */}
+              <div className="flex-1 overflow-hidden">
+                <NoteEditor
+                  content={editingContent}
+                  onChange={handleContentChange}
+                  placeholder="Start typing your note..."
+                />
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-gray-500">
+              <div className="text-center">
+                <StickyNote className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                <p className="text-lg font-semibold">No note selected</p>
+                <p className="text-sm mt-1">Select a note or create a new one to get started</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
