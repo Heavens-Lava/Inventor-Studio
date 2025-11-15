@@ -1,13 +1,17 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { DrawingCanvas, DrawingTool, DrawingElement } from './DrawingCanvas';
 import { DrawingToolbar } from './DrawingToolbar';
+import { recognizeHandwriting, smoothPath, improveTextWithLocalLLM } from '@/utils/handwritingRecognition';
+import { toast } from 'sonner';
 
 interface DrawingEditorProps {
   drawingData?: DrawingElement[];
   onChange?: (data: DrawingElement[]) => void;
+  onTextRecognized?: (text: string) => void;
 }
 
-export function DrawingEditor({ drawingData = [], onChange }: DrawingEditorProps) {
+export function DrawingEditor({ drawingData = [], onChange, onTextRecognized }: DrawingEditorProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [tool, setTool] = useState<DrawingTool>('pen');
   const [strokeColor, setStrokeColor] = useState('#000000');
   const [fillColor, setFillColor] = useState('transparent');
@@ -18,6 +22,7 @@ export function DrawingEditor({ drawingData = [], onChange }: DrawingEditorProps
   const [elements, setElements] = useState<DrawingElement[]>(drawingData);
   const [history, setHistory] = useState<DrawingElement[][]>([drawingData]);
   const [historyIndex, setHistoryIndex] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Update elements when drawingData prop changes
   useEffect(() => {
@@ -78,6 +83,70 @@ export function DrawingEditor({ drawingData = [], onChange }: DrawingEditorProps
     }
   }, [history, historyIndex, onChange]);
 
+  // OCR - Convert handwriting to text
+  const handleOCR = useCallback(async () => {
+    if (!canvasRef.current || elements.length === 0) {
+      toast.error('No handwriting to recognize');
+      return;
+    }
+
+    setIsProcessing(true);
+    toast.info('Recognizing handwriting...');
+
+    try {
+      const text = await recognizeHandwriting(canvasRef.current, (progress) => {
+        console.log('OCR Progress:', Math.round(progress * 100) + '%');
+      });
+
+      if (text) {
+        toast.success('Handwriting recognized!');
+        onTextRecognized?.(text);
+      } else {
+        toast.warning('No text recognized');
+      }
+    } catch (error) {
+      console.error('OCR error:', error);
+      toast.error('Failed to recognize handwriting');
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [elements.length, onTextRecognized]);
+
+  // Beautify - Smooth handwriting paths
+  const handleBeautify = useCallback(() => {
+    if (elements.length === 0) {
+      toast.error('No handwriting to beautify');
+      return;
+    }
+
+    setIsProcessing(true);
+    toast.info('Beautifying handwriting...');
+
+    try {
+      const beautifiedElements = elements.map((element) => {
+        if (element.type === 'pen' && element.points.length > 2) {
+          return {
+            ...element,
+            points: smoothPath(element.points, 2),
+          };
+        }
+        return element;
+      });
+
+      setElements(beautifiedElements);
+      setHistory([...history.slice(0, historyIndex + 1), beautifiedElements]);
+      setHistoryIndex(historyIndex + 1);
+      onChange?.(beautifiedElements);
+
+      toast.success('Handwriting beautified!');
+    } catch (error) {
+      console.error('Beautify error:', error);
+      toast.error('Failed to beautify handwriting');
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [elements, history, historyIndex, onChange]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -116,9 +185,13 @@ export function DrawingEditor({ drawingData = [], onChange }: DrawingEditorProps
         onRedo={handleRedo}
         canUndo={historyIndex > 0}
         canRedo={historyIndex < history.length - 1}
+        onOCR={handleOCR}
+        onBeautify={handleBeautify}
+        isProcessing={isProcessing}
       />
       <div className="flex-1 overflow-hidden p-4 bg-gray-50">
         <DrawingCanvas
+          ref={canvasRef}
           tool={tool}
           strokeColor={strokeColor}
           fillColor={fillColor}

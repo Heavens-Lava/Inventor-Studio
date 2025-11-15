@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 
 export type DrawingTool = 'pen' | 'rectangle' | 'circle' | 'line' | 'eraser';
 
@@ -27,7 +27,7 @@ export interface DrawingCanvasProps {
   onChange?: (elements: DrawingElement[]) => void;
 }
 
-export function DrawingCanvas({
+export const DrawingCanvas = forwardRef<HTMLCanvasElement, DrawingCanvasProps>(function DrawingCanvas({
   tool,
   strokeColor,
   fillColor,
@@ -37,8 +37,11 @@ export function DrawingCanvas({
   snapToGrid,
   canvasData = [],
   onChange,
-}: DrawingCanvasProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+}, ref) {
+  const internalCanvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Expose the canvas ref to parent
+  useImperativeHandle(ref, () => internalCanvasRef.current as HTMLCanvasElement);
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPoint, setStartPoint] = useState<Point | null>(null);
   const [currentPoint, setCurrentPoint] = useState<Point | null>(null);
@@ -60,7 +63,7 @@ export function DrawingCanvas({
   // Get mouse position relative to canvas
   const getMousePos = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>): Point => {
-      const canvas = canvasRef.current;
+      const canvas = internalCanvasRef.current;
       if (!canvas) return { x: 0, y: 0 };
 
       const rect = canvas.getBoundingClientRect();
@@ -165,7 +168,7 @@ export function DrawingCanvas({
 
   // Redraw entire canvas
   const redraw = useCallback(() => {
-    const canvas = canvasRef.current;
+    const canvas = internalCanvasRef.current;
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
@@ -254,7 +257,7 @@ export function DrawingCanvas({
 
   // Initialize canvas
   useEffect(() => {
-    const canvas = canvasRef.current;
+    const canvas = internalCanvasRef.current;
     if (!canvas) return;
 
     const container = canvas.parentElement;
@@ -282,7 +285,7 @@ export function DrawingCanvas({
   return (
     <div className="relative w-full h-full">
       <canvas
-        ref={canvasRef}
+        ref={internalCanvasRef}
         className="absolute inset-0 cursor-crosshair border border-gray-300 bg-white"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -291,4 +294,4 @@ export function DrawingCanvas({
       />
     </div>
   );
-}
+});

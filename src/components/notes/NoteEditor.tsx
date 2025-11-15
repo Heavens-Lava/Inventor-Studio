@@ -7,7 +7,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import Highlight from '@tiptap/extension-highlight';
 import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { EditorToolbar } from './EditorToolbar';
 import { EditorBubbleMenu } from './EditorBubbleMenu';
 import { DrawingEditor } from './DrawingEditor';
@@ -81,6 +81,15 @@ export function NoteEditor({
     }
   }, [editable, editor]);
 
+  // Handle OCR text recognition
+  const handleTextRecognized = useCallback((text: string) => {
+    if (editor && text) {
+      // Insert the recognized text at the end of the document
+      editor.commands.focus('end');
+      editor.commands.insertContent(`<p><strong>Recognized Text:</strong></p><p>${text}</p>`);
+    }
+  }, [editor]);
+
   if (!editor) {
     return null;
   }
@@ -98,7 +107,11 @@ export function NoteEditor({
 
       {/* Drawing Canvas */}
       <div className="h-[400px] border-t-2 border-gray-300">
-        <DrawingEditor drawingData={drawingData} onChange={onDrawingChange} />
+        <DrawingEditor
+          drawingData={drawingData}
+          onChange={onDrawingChange}
+          onTextRecognized={handleTextRecognized}
+        />
       </div>
     </div>
   );

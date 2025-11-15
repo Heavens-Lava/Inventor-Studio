@@ -16,6 +16,9 @@ import {
   Trash2,
   Undo,
   Redo,
+  Sparkles,
+  Type,
+  Loader2,
 } from 'lucide-react';
 import { DrawingTool } from './DrawingCanvas';
 import { Slider } from '@/components/ui/slider';
@@ -48,6 +51,9 @@ interface DrawingToolbarProps {
   onRedo?: () => void;
   canUndo?: boolean;
   canRedo?: boolean;
+  onOCR?: () => void;
+  onBeautify?: () => void;
+  isProcessing?: boolean;
 }
 
 const COMMON_COLORS = [
@@ -90,6 +96,9 @@ export function DrawingToolbar({
   onRedo,
   canUndo = false,
   canRedo = false,
+  onOCR,
+  onBeautify,
+  isProcessing = false,
 }: DrawingToolbarProps) {
   return (
     <TooltipProvider>
@@ -340,6 +349,55 @@ export function DrawingToolbar({
                 </TooltipContent>
               </Tooltip>
             </>
+          )}
+
+          <Separator orientation="vertical" className="h-6" />
+
+          {/* AI Features */}
+          {onBeautify && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onBeautify}
+                  disabled={isProcessing}
+                  className="text-purple-600"
+                >
+                  {isProcessing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Beautify Handwriting</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {onOCR && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onOCR}
+                  disabled={isProcessing}
+                  className="text-blue-600"
+                >
+                  {isProcessing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Type className="w-4 h-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Convert to Text (OCR)</p>
+              </TooltipContent>
+            </Tooltip>
           )}
 
           <Separator orientation="vertical" className="h-6" />
