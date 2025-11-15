@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState, useRef, useEffect } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { GoalNodeData } from '@/types/goalMap';
 import { Badge } from '@/components/ui/badge';
@@ -37,8 +37,53 @@ const typeColors = {
  * GoalMapCard Component
  * Custom node component for displaying goals on the canvas
  */
-export const GoalMapCard = memo(({ data, selected }: NodeProps<GoalNodeData>) => {
+export const GoalMapCard = memo(({ data, selected, id }: NodeProps<GoalNodeData>) => {
   const StatusIcon = statusIcons[data.status];
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(data.title);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus input when editing starts
+  useEffect(() => {
+    if (isEditingTitle && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditingTitle]);
+
+  const handleTitleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditingTitle(true);
+  };
+
+  const handleTitleBlur = () => {
+    setIsEditingTitle(false);
+    if (editedTitle.trim() && editedTitle !== data.title) {
+      // Trigger a custom event to update the node
+      const event = new CustomEvent('updateNode', {
+        detail: { nodeId: id, updates: { title: editedTitle.trim() } },
+      });
+      window.dispatchEvent(event);
+    } else {
+      setEditedTitle(data.title);
+    }
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleTitleBlur();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setEditedTitle(data.title);
+      setIsEditingTitle(false);
+    }
+  };
+
+  // Update local state when data changes
+  useEffect(() => {
+    setEditedTitle(data.title);
+  }, [data.title]);
 
   return (
     <div
@@ -111,7 +156,26 @@ export const GoalMapCard = memo(({ data, selected }: NodeProps<GoalNodeData>) =>
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <Target className="w-4 h-4 text-blue-600 flex-shrink-0" />
-            <h3 className="font-semibold text-sm truncate">{data.title}</h3>
+            {isEditingTitle ? (
+              <input
+                ref={inputRef}
+                type="text"
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                onBlur={handleTitleBlur}
+                onKeyDown={handleTitleKeyDown}
+                className="font-semibold text-sm border-b-2 border-blue-500 bg-transparent focus:outline-none flex-1 min-w-0"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <h3
+                className="font-semibold text-sm truncate cursor-text hover:bg-gray-100 px-1 rounded"
+                onDoubleClick={handleTitleDoubleClick}
+                title="Double-click to edit"
+              >
+                {data.title}
+              </h3>
+            )}
           </div>
           <Badge variant="outline" className={`${typeColors[data.type]} text-xs flex-shrink-0`}>
             {data.type}
