@@ -46,8 +46,15 @@ export function useGoalMapStorage(mapId: string = 'default') {
     }
 
     console.log(`[Load] Starting load for map ${mapId} (was ${loadedMapId})`);
-    setIsLoadingMap(true); // Block all saves during load
+
+    // CRITICAL: Block saves and clear state IMMEDIATELY before loading
+    setIsLoadingMap(true);
     setIsLoaded(false);
+
+    // Clear the current state immediately to prevent old data from bleeding through
+    setNodes([]);
+    setEdges([]);
+    setViewport(defaultViewport);
 
     const NODES_KEY = `goalmap_nodes_${mapId}`;
     const EDGES_KEY = `goalmap_edges_${mapId}`;

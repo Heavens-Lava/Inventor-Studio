@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { FolderOpen, Plus, Trash2, Edit, Copy, Map, Check } from 'lucide-react';
+import { Trash2, Edit, Map, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -18,35 +18,14 @@ interface GoalMapManagerProps {
 }
 
 export const GoalMapManager = memo(({ open, onOpenChange }: GoalMapManagerProps) => {
-  const { maps, activeMapId, createMap, deleteMap, renameMap, setActiveMap, duplicateMap } = useGoalMapList();
+  const { maps, activeMapId, deleteMap, renameMap, setActiveMap } = useGoalMapList();
 
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedMapId, setSelectedMapId] = useState<string | null>(null);
 
-  const [newMapName, setNewMapName] = useState('');
-  const [newMapDescription, setNewMapDescription] = useState('');
-
   const [editMapName, setEditMapName] = useState('');
   const [editMapDescription, setEditMapDescription] = useState('');
-
-  const handleCreateMap = useCallback(() => {
-    if (!newMapName.trim()) {
-      toast.error('Please enter a map name');
-      return;
-    }
-
-    // createMap will auto-switch to the new map
-    const newMapId = createMap(newMapName.trim(), newMapDescription.trim(), true);
-    console.log(`[GoalMapManager] Created and switched to map: ${newMapId}`);
-
-    toast.success(`Created "${newMapName}"`);
-    setNewMapName('');
-    setNewMapDescription('');
-    setIsCreateDialogOpen(false);
-    onOpenChange(false);
-  }, [newMapName, newMapDescription, createMap, onOpenChange]);
 
   const handleEditMap = useCallback(() => {
     if (!selectedMapId || !editMapName.trim()) {
@@ -76,13 +55,6 @@ export const GoalMapManager = memo(({ open, onOpenChange }: GoalMapManagerProps)
     setSelectedMapId(null);
   }, [selectedMapId, deleteMap]);
 
-  const handleDuplicateMap = useCallback((mapId: string, mapName: string) => {
-    const newMapId = duplicateMap(mapId, `${mapName} (Copy)`);
-    toast.success('Map duplicated');
-    setActiveMap(newMapId);
-    onOpenChange(false);
-  }, [duplicateMap, setActiveMap, onOpenChange]);
-
   const handleSelectMap = useCallback((mapId: string) => {
     setActiveMap(mapId);
     toast.success('Switched map');
@@ -111,17 +83,11 @@ export const GoalMapManager = memo(({ open, onOpenChange }: GoalMapManagerProps)
               Goal Maps
             </DialogTitle>
             <DialogDescription>
-              Manage your goal maps. Switch between maps, create new ones, or organize your existing maps.
+              Manage your goal maps. Switch between maps or organize your existing maps.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Create New Map Button */}
-            <Button onClick={() => setIsCreateDialogOpen(true)} className="w-full">
-              <Plus className="w-4 h-4 mr-2" />
-              Create New Map
-            </Button>
-
             {/* Maps List */}
             <div className="space-y-2">
               {maps.map((map) => (
@@ -168,15 +134,6 @@ export const GoalMapManager = memo(({ open, onOpenChange }: GoalMapManagerProps)
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => handleDuplicateMap(map.id, map.name)}
-                        title="Duplicate map"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </Button>
-
-                      <Button
-                        size="sm"
-                        variant="ghost"
                         onClick={() => openDeleteDialog(map.id)}
                         disabled={maps.length === 1}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -188,58 +145,6 @@ export const GoalMapManager = memo(({ open, onOpenChange }: GoalMapManagerProps)
                   </div>
                 </Card>
               ))}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Create Map Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Goal Map</DialogTitle>
-            <DialogDescription>
-              Give your new goal map a name and optional description
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div>
-              <Label>Map Name *</Label>
-              <Input
-                value={newMapName}
-                onChange={(e) => setNewMapName(e.target.value)}
-                placeholder="My New Goal Map"
-                onKeyDown={(e) => e.key === 'Enter' && handleCreateMap()}
-              />
-            </div>
-
-            <div>
-              <Label>Description (Optional)</Label>
-              <Textarea
-                value={newMapDescription}
-                onChange={(e) => setNewMapDescription(e.target.value)}
-                placeholder="What is this map for?"
-                rows={3}
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Button onClick={handleCreateMap} className="flex-1">
-                <Plus className="w-4 h-4 mr-2" />
-                Create Map
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsCreateDialogOpen(false);
-                  setNewMapName('');
-                  setNewMapDescription('');
-                }}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
             </div>
           </div>
         </DialogContent>
