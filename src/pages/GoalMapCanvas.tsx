@@ -88,6 +88,7 @@ function GoalMapCanvasInner() {
     nodes,
     edges,
     isLoaded: mapLoaded,
+    isSwitching,
     addGoalNode,
     addMilestoneNode,
     addRequirementNode,
@@ -353,7 +354,10 @@ function GoalMapCanvasInner() {
     // Viewport is auto-saved via the hook
   }, []);
 
-  if (!goalsLoaded || !mapLoaded) {
+  // Only show loading on initial load, not when switching maps
+  const isInitialLoad = !goalsLoaded || (!mapLoaded && !isSwitching);
+
+  if (isInitialLoad) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
