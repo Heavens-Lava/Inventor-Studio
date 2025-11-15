@@ -329,6 +329,25 @@ function GoalMapCanvasInner() {
     }
   }, [selectedEdgeId, removeEdge]);
 
+  // Handle edge rewiring (drag edge endpoint to reconnect)
+  const handleEdgeUpdate = useCallback((oldEdge: any, newConnection: any) => {
+    const updatedEdges = edges.map((edge) => {
+      if (edge.id === oldEdge.id) {
+        return {
+          ...edge,
+          source: newConnection.source,
+          target: newConnection.target,
+          sourceHandle: newConnection.sourceHandle,
+          targetHandle: newConnection.targetHandle,
+        };
+      }
+      return edge;
+    });
+
+    setEdgesState(updatedEdges);
+    toast.success("Connection rewired");
+  }, [edges, setEdgesState]);
+
   // Handle clearing the canvas
   const handleClearCanvas = useCallback(() => {
     if (nodes.length === 0) {
@@ -501,12 +520,17 @@ function GoalMapCanvasInner() {
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           onEdgeClick={handleEdgeClick}
+          onEdgeUpdate={handleEdgeUpdate}
           onMoveEnd={handleMoveEnd}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           fitView
           minZoom={0.1}
           maxZoom={2}
+          selectionOnDrag
+          panOnDrag={[1, 2]}
+          selectionMode="partial"
+          edgeUpdaterRadius={10}
           defaultEdgeOptions={{
             type: "smoothstep",
             animated: true,
@@ -1222,6 +1246,31 @@ function GoalMapCanvasInner() {
             </div>
 
             <div className="border-t pt-3">
+              <h4 className="font-medium text-sm mb-2">Selection & Navigation</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="font-medium">Box select</div>
+                <div className="text-gray-600">Click and drag on canvas</div>
+
+                <div className="font-medium">Pan canvas</div>
+                <div className="text-gray-600">Middle/right mouse drag or scroll wheel</div>
+              </div>
+            </div>
+
+            <div className="border-t pt-3">
+              <h4 className="font-medium text-sm mb-2">Connections</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="font-medium">Create connection</div>
+                <div className="text-gray-600">Drag from handle to handle</div>
+
+                <div className="font-medium">Rewire connection</div>
+                <div className="text-gray-600">Drag from connection endpoint</div>
+
+                <div className="font-medium">Edit connection</div>
+                <div className="text-gray-600">Click on connection line</div>
+              </div>
+            </div>
+
+            <div className="border-t pt-3">
               <h4 className="font-medium text-sm mb-2">Inline Editing</h4>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div className="font-medium">Edit card title</div>
@@ -1250,18 +1299,18 @@ function GoalMapCanvasInner() {
         <div className="flex items-center justify-center gap-2 sm:gap-6 text-xs text-gray-600 flex-wrap">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-blue-500 rounded-full" />
-            <span className="hidden sm:inline">Drag cards to reposition</span>
+            <span className="hidden sm:inline">Drag cards to reposition • Click & drag canvas for box select</span>
             <span className="sm:hidden">Drag cards</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-blue-500 rounded-full" />
-            <span className="hidden sm:inline">Connect handles to link items</span>
-            <span className="sm:hidden">Connect</span>
+            <span className="hidden sm:inline">Drag connection endpoints to rewire</span>
+            <span className="sm:hidden">Rewire</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-blue-500 rounded-full" />
             <span className="hidden sm:inline">Double-click to edit • Press ? for shortcuts</span>
-            <span className="sm:hidden">Double-click to edit</span>
+            <span className="sm:hidden">Press ?</span>
           </div>
         </div>
       </div>
