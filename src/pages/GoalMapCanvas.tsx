@@ -390,6 +390,7 @@ function GoalMapCanvasInner() {
       {/* ReactFlow Canvas */}
       <div className="flex-1">
         <ReactFlow
+          key={activeMapId}
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
