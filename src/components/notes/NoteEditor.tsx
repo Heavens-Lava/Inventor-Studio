@@ -7,6 +7,15 @@ import TextAlign from '@tiptap/extension-text-align';
 import Highlight from '@tiptap/extension-highlight';
 import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
+import { TaskList } from '@tiptap/extension-task-list';
+import { TaskItem } from '@tiptap/extension-task-item';
+import { Table } from '@tiptap/extension-table';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TableCell } from '@tiptap/extension-table-cell';
+import { TableHeader } from '@tiptap/extension-table-header';
+import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight';
+import { Image } from '@tiptap/extension-image';
+import { common, createLowlight } from 'lowlight';
 import { useEffect, useCallback, useState } from 'react';
 import { EditorToolbar } from './EditorToolbar';
 import { EditorBubbleMenu } from './EditorBubbleMenu';
@@ -15,6 +24,9 @@ import type { DrawingElement } from '@/types/note';
 import { Button } from '@/components/ui/button';
 import { Pencil, Type, ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+
+// Create lowlight instance for syntax highlighting
+const lowlight = createLowlight(common);
 
 interface NoteEditorProps {
   content: string;
@@ -70,6 +82,7 @@ export function NoteEditor({
         heading: {
           levels: [1, 2, 3, 4, 5, 6],
         },
+        codeBlock: false, // Disable default code block to use CodeBlockLowlight
       }),
       Underline,
       Link.configure({
@@ -89,6 +102,43 @@ export function NoteEditor({
       }),
       TextStyle,
       Color,
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+        HTMLAttributes: {
+          class: 'flex items-start gap-2',
+        },
+      }),
+      Table.configure({
+        resizable: true,
+        HTMLAttributes: {
+          class: 'border-collapse table-auto w-full my-4',
+        },
+      }),
+      TableRow,
+      TableHeader.configure({
+        HTMLAttributes: {
+          class: 'border border-gray-300 bg-gray-50 font-semibold p-2 text-left',
+        },
+      }),
+      TableCell.configure({
+        HTMLAttributes: {
+          class: 'border border-gray-300 p-2',
+        },
+      }),
+      CodeBlockLowlight.configure({
+        lowlight,
+        HTMLAttributes: {
+          class: 'bg-gray-900 text-gray-100 rounded-lg p-4 my-4 overflow-x-auto',
+        },
+      }),
+      Image.configure({
+        inline: true,
+        allowBase64: true,
+        HTMLAttributes: {
+          class: 'max-w-full h-auto rounded-lg my-4',
+        },
+      }),
     ],
     content,
     editable,

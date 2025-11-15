@@ -13,6 +13,7 @@ import {
   Trash2,
   Book,
   StickyNote,
+  Pin,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -27,6 +28,7 @@ export default function NotesApp() {
     deleteNote,
     updateNote,
     toggleFavorite,
+    togglePin,
     filterAndSortNotes,
   } = useNotesStorage();
 
@@ -81,6 +83,17 @@ export default function NotesApp() {
       await toggleFavorite(noteId);
     } catch (error) {
       toast.error('Failed to update favorite status');
+      console.error(error);
+    }
+  };
+
+  // Handle toggling pin
+  const handleTogglePin = async (noteId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await togglePin(noteId);
+    } catch (error) {
+      toast.error('Failed to update pin status');
       console.error(error);
     }
   };
@@ -224,6 +237,18 @@ export default function NotesApp() {
                       </div>
                     </div>
                     <div className="flex flex-col gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0"
+                        onClick={(e) => handleTogglePin(note.id, e)}
+                      >
+                        <Pin
+                          className={`w-3 h-3 ${
+                            note.isPinned ? 'fill-blue-600 text-blue-600' : ''
+                          }`}
+                        />
+                      </Button>
                       <Button
                         size="sm"
                         variant="ghost"

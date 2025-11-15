@@ -129,6 +129,16 @@ export function useNotesStorage() {
   }, [notes, updateNote]);
 
   /**
+   * Toggle pin status
+   */
+  const togglePin = useCallback(async (noteId: string): Promise<void> => {
+    const note = notes.find((n) => n.id === noteId);
+    if (!note) return;
+
+    await updateNote(noteId, { isPinned: !note.isPinned });
+  }, [notes, updateNote]);
+
+  /**
    * Search notes
    */
   const searchNotes = useCallback(async (query: string): Promise<Note[]> => {
@@ -288,6 +298,7 @@ export function useNotesStorage() {
     getNote,
     toggleFavorite,
     toggleArchive,
+    togglePin,
     searchNotes,
     filterAndSortNotes,
 

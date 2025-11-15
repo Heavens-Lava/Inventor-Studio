@@ -20,6 +20,10 @@ import {
   AlignRight,
   AlignJustify,
   Highlighter,
+  CheckSquare,
+  Table as TableIcon,
+  FileCode,
+  ImagePlus,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -52,6 +56,18 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     }
 
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  };
+
+  const addImage = () => {
+    const url = window.prompt('Enter image URL:');
+
+    if (url) {
+      editor.chain().focus().setImage({ src: url }).run();
+    }
+  };
+
+  const insertTable = () => {
+    editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
   };
 
   return (
@@ -279,6 +295,21 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           </TooltipContent>
         </Tooltip>
 
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={editor.isActive('taskList') ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => editor.chain().focus().toggleTaskList().run()}
+            >
+              <CheckSquare className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Task List</p>
+          </TooltipContent>
+        </Tooltip>
+
         <Separator orientation="vertical" className="h-6 mx-1" />
 
         {/* Alignment */}
@@ -357,6 +388,56 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           </TooltipTrigger>
           <TooltipContent>
             <p>Insert Link (Ctrl+K)</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Separator orientation="vertical" className="h-6 mx-1" />
+
+        {/* Table */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={editor.isActive('table') ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={insertTable}
+            >
+              <TableIcon className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Insert Table</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* Code Block */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={editor.isActive('codeBlock') ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+            >
+              <FileCode className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Code Block</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* Image */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={addImage}
+            >
+              <ImagePlus className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Insert Image</p>
           </TooltipContent>
         </Tooltip>
       </div>
