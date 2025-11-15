@@ -412,17 +412,6 @@ function GoalMapCanvasInner() {
     []
   );
 
-  if (!goalsLoaded || !mapLoaded) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading goal map...</p>
-        </div>
-      </div>
-    );
-  }
-
   // Enhanced edges with hover effect
   const enhancedEdges = useMemo(() => {
     return edges.map((edge) => ({
@@ -441,6 +430,17 @@ function GoalMapCanvasInner() {
   const selectedCount = useMemo(() => {
     return nodes.filter((n) => n.selected).length;
   }, [nodes]);
+
+  if (!goalsLoaded || !mapLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading goal map...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen w-full flex flex-col bg-gray-50 dark:bg-gray-900">
