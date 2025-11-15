@@ -1,5 +1,8 @@
 import { Editor } from '@tiptap/react';
 import { Button } from '@/components/ui/button';
+import { useState, useRef, useEffect } from 'react';
+import { ClipboardManager } from './ClipboardManager';
+import { ChartDialog } from './ChartDialog';
 import {
   Bold,
   Italic,
@@ -28,6 +31,8 @@ import {
   Rows,
   Trash,
   Plus,
+  Mic,
+  MicOff,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -42,6 +47,61 @@ interface EditorToolbarProps {
 }
 
 export function EditorToolbar({ editor }: EditorToolbarProps) {
+  const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    // Check if browser supports speech recognition
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = Array.from(event.results)
+          .map((result: any) => result[0])
+          .map((result: any) => result.transcript)
+          .join('');
+
+        if (event.results[0].isFinal) {
+          editor.commands.insertContent(transcript + ' ');
+        }
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsRecording(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsRecording(false);
+      };
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, [editor]);
+
+  const toggleVoiceInput = () => {
+    if (!recognitionRef.current) {
+      alert('Speech recognition is not supported in your browser. Try Chrome or Edge.');
+      return;
+    }
+
+    if (isRecording) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+    } else {
+      recognitionRef.current.start();
+      setIsRecording(true);
+    }
+  };
+
   if (!editor) {
     return null;
   }
@@ -599,6 +659,31 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
             <p>Insert Image</p>
           </TooltipContent>
         </Tooltip>
+
+        <Separator orientation="vertical" className="h-6 mx-1" />
+
+        {/* Voice Input */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={isRecording ? 'default' : 'ghost'}
+              size="sm"
+              onClick={toggleVoiceInput}
+              className={isRecording ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse' : ''}
+            >
+              {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{isRecording ? 'Stop Recording' : 'Voice Input (Speech-to-text)'}</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* Clipboard Manager */}
+        <ClipboardManager />
+
+        {/* Chart Dialog */}
+        <ChartDialog editor={editor} />
       </div>
     </TooltipProvider>
   );
