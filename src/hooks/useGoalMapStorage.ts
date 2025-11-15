@@ -15,54 +15,59 @@ import {
 } from '@/types/goalMap';
 import { Goal } from '@/types/goal';
 
-const STORAGE_KEY = 'daily-haven-goal-map';
-
 /**
  * Hook for managing goal map data with localStorage persistence
+ * @param mapId - The ID of the goal map to manage
  */
-export function useGoalMapStorage() {
+export function useGoalMapStorage(mapId: string = 'default') {
   const [nodes, setNodes] = useState<GoalMapNode[]>([]);
   const [edges, setEdges] = useState<GoalMapEdge[]>([]);
   const [viewport, setViewport] = useState<GoalMapViewport>(defaultViewport);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load data from localStorage
+  // Generate storage keys for this specific map
+  const NODES_KEY = `goalmap_nodes_${mapId}`;
+  const EDGES_KEY = `goalmap_edges_${mapId}`;
+  const VIEWPORT_KEY = `goalmap_viewport_${mapId}`;
+
+  // Load data from localStorage when mapId changes
   useEffect(() => {
     const loadData = () => {
       try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const data: GoalMapData = JSON.parse(stored);
-          setNodes(data.nodes || []);
-          setEdges(data.edges || []);
-          setViewport(data.viewport || defaultViewport);
-        }
+        setIsLoaded(false);
+
+        const storedNodes = localStorage.getItem(NODES_KEY);
+        const storedEdges = localStorage.getItem(EDGES_KEY);
+        const storedViewport = localStorage.getItem(VIEWPORT_KEY);
+
+        setNodes(storedNodes ? JSON.parse(storedNodes) : []);
+        setEdges(storedEdges ? JSON.parse(storedEdges) : []);
+        setViewport(storedViewport ? JSON.parse(storedViewport) : defaultViewport);
       } catch (error) {
         console.error('Error loading goal map data:', error);
+        setNodes([]);
+        setEdges([]);
+        setViewport(defaultViewport);
       } finally {
         setIsLoaded(true);
       }
     };
 
     loadData();
-  }, []);
+  }, [mapId, NODES_KEY, EDGES_KEY, VIEWPORT_KEY]);
 
   // Save data to localStorage whenever it changes
   useEffect(() => {
     if (!isLoaded) return;
 
-    const data: GoalMapData = {
-      nodes,
-      edges,
-      viewport,
-    };
-
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      localStorage.setItem(NODES_KEY, JSON.stringify(nodes));
+      localStorage.setItem(EDGES_KEY, JSON.stringify(edges));
+      localStorage.setItem(VIEWPORT_KEY, JSON.stringify(viewport));
     } catch (error) {
       console.error('Error saving goal map data:', error);
     }
-  }, [nodes, edges, viewport, isLoaded]);
+  }, [nodes, edges, viewport, isLoaded, NODES_KEY, EDGES_KEY, VIEWPORT_KEY]);
 
   /**
    * Add a new goal node to the canvas

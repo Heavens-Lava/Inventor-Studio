@@ -1,0 +1,37 @@
+/* Custom ReactFlow edge animations */
+
+/* Reverse animation direction for edges */
+g.animated-reverse path {
+  stroke-dasharray: 5;
+  animation: dashdraw-reverse 0.5s linear infinite;
+}
+
+/* Keyframes for reverse animation */
+@keyframes dashdraw-reverse {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+
+/* Default forward animation */
+.react-flow__edge.animated path {
+  stroke-dasharray: 5;
+  animation: dashdraw 0.5s linear infinite;
+}
+
+@keyframes dashdraw {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: 10;
+  }
+}
+
+/* Ensure the pulse animation doesn't interfere */
+g.animated-reverse path.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite, dashdraw-reverse 0.5s linear infinite;
+}

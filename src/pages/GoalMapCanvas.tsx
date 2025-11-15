@@ -10,10 +10,12 @@ import ReactFlow, {
   useKeyPress,
 } from "reactflow";
 import "reactflow/dist/style.css";
+import "@/styles/reactflow-custom.css";
 import { useGoalMapStorage } from "@/hooks/useGoalMapStorage";
 import { useGoalStorage } from "@/hooks/useGoalStorage";
 import { useUndoRedo } from "@/hooks/useUndoRedo";
 import { useTemplateStorage } from "@/hooks/useTemplateStorage";
+import { useGoalMapList } from "@/hooks/useGoalMapList";
 import { GoalMapCard } from "@/components/GoalMapCard";
 import { MilestoneCard } from "@/components/MilestoneCard";
 import { RequirementCard } from "@/components/RequirementCard";
@@ -21,6 +23,7 @@ import { NoteCard } from "@/components/NoteCard";
 import { CustomEdge } from "@/components/CustomEdge";
 import { TemplateBrowser } from "@/components/TemplateBrowser";
 import { QuickStartWizard } from "@/components/QuickStartWizard";
+import { GoalMapManager } from "@/components/GoalMapManager";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -98,6 +101,7 @@ function GoalMapCanvasInner() {
   const navigate = useNavigate();
   const { fitView, zoomIn, zoomOut, screenToFlowPosition } = useReactFlow();
   const { goals, isLoaded: goalsLoaded } = useGoalStorage();
+  const { maps, activeMapId, updateMapMetadata, isLoaded: mapsLoaded } = useGoalMapList();
   const {
     nodes,
     edges,
@@ -119,7 +123,7 @@ function GoalMapCanvasInner() {
     updateNode,
     setNodesState,
     setEdgesState,
-  } = useGoalMapStorage();
+  } = useGoalMapStorage(activeMapId);
 
   const { canUndo, canRedo, undo, redo, pushHistory, clearHistory } = useUndoRedo();
   const { loadTemplate, saveTemplate } = useTemplateStorage();
@@ -131,6 +135,7 @@ function GoalMapCanvasInner() {
   const [isTemplateBrowserOpen, setIsTemplateBrowserOpen] = useState(false);
   const [isQuickStartOpen, setIsQuickStartOpen] = useState(false);
   const [isSaveTemplateDialogOpen, setIsSaveTemplateDialogOpen] = useState(false);
+  const [isMapManagerOpen, setIsMapManagerOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
   const [templateDescription, setTemplateDescription] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -508,6 +513,17 @@ function GoalMapCanvasInner() {
     }
   }, [mapLoaded, nodes.length]);
 
+  // Update map metadata when node count changes
+  useEffect(() => {
+    if (mapLoaded && activeMapId) {
+      updateMapMetadata(activeMapId, { nodeCount: nodes.length });
+    }
+  }, [nodes.length, mapLoaded, activeMapId, updateMapMetadata]);
+
+  // Get current map name
+  const currentMap = maps.find((m) => m.id === activeMapId);
+  const currentMapName = currentMap?.name || 'Goal Map';
+
   // Update viewport when it changes
   const handleMoveEnd = useCallback((event: any, viewport: any) => {
     // Viewport is auto-saved via the hook
@@ -570,7 +586,7 @@ function GoalMapCanvasInner() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleUndo, handleRedo, handleDuplicate, handleDeleteSelected, handleFitView]);
 
-  if (!goalsLoaded || !mapLoaded) {
+  if (!goalsLoaded || !mapLoaded || !mapsLoaded) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -592,12 +608,30 @@ function GoalMapCanvasInner() {
           </Button>
           <div className="h-6 w-px bg-gray-300" />
           <Target className="w-5 h-5 text-blue-600" />
-          <h1 className="text-xl font-bold text-gray-900">Goal Map</h1>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">{currentMapName}</h1>
+            {currentMap?.description && (
+              <p className="text-xs text-gray-500">{currentMap.description}</p>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsMapManagerOpen(true)}
+          >
+            <FolderOpen className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">Maps</span>
+            {maps.length > 1 && (
+              <Badge variant="secondary" className="ml-2">
+                {maps.length}
+              </Badge>
+            )}
+          </Button>
           <Badge variant="secondary">
-            {nodes.length} {nodes.length === 1 ? "card" : "cards"} on canvas
+            {nodes.length} {nodes.length === 1 ? "card" : "cards"}
           </Badge>
         </div>
       </div>
@@ -1500,6 +1534,12 @@ function GoalMapCanvasInner() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Goal Map Manager */}
+      <GoalMapManager
+        open={isMapManagerOpen}
+        onOpenChange={setIsMapManagerOpen}
+      />
     </div>
   );
 }

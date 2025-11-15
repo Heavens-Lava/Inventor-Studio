@@ -33,7 +33,7 @@ export const CustomEdge = memo(({
   const animationDirection = data?.animationDirection || 'forward';
 
   return (
-    <>
+    <g className={animationDirection === 'reverse' ? 'animated-reverse' : ''}>
       {/* Invisible wider path for easier hover */}
       <path
         d={edgePath}
@@ -66,7 +66,6 @@ export const CustomEdge = memo(({
           opacity: selected || isHovered ? 1 : 0.8,
           transition: 'all 0.2s ease-in-out',
         }}
-        className={animationDirection === 'reverse' ? 'animated-reverse' : ''}
       />
       <EdgeLabelRenderer>
         <div
@@ -95,7 +94,7 @@ export const CustomEdge = memo(({
           </div>
         </div>
       </EdgeLabelRenderer>
-    </>
+    </g>
   );
 });
 
