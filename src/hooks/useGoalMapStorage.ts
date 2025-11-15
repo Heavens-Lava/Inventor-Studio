@@ -28,14 +28,15 @@ export function useGoalMapStorage(mapId: string = 'default') {
   const [viewport, setViewport] = useState<GoalMapViewport>(defaultViewport);
   const [isLoaded, setIsLoaded] = useState(false);
   const [loadedMapId, setLoadedMapId] = useState<string | null>(null);
+  const [isLoadingMap, setIsLoadingMap] = useState(false);
 
   // Track if we're currently switching maps or need initial load
   const needsLoad = mapId !== loadedMapId;
 
   // Log state changes for debugging
   useEffect(() => {
-    console.log(`[useGoalMapStorage] mapId: ${mapId}, loadedMapId: ${loadedMapId}, needsLoad: ${needsLoad}, isLoaded: ${isLoaded}`);
-  }, [mapId, loadedMapId, needsLoad, isLoaded]);
+    console.log(`[useGoalMapStorage] mapId: ${mapId}, loadedMapId: ${loadedMapId}, needsLoad: ${needsLoad}, isLoaded: ${isLoaded}, isLoadingMap: ${isLoadingMap}`);
+  }, [mapId, loadedMapId, needsLoad, isLoaded, isLoadingMap]);
 
   // Load data from localStorage when mapId changes or on initial mount
   useEffect(() => {
@@ -45,6 +46,7 @@ export function useGoalMapStorage(mapId: string = 'default') {
     }
 
     console.log(`[Load] Starting load for map ${mapId} (was ${loadedMapId})`);
+    setIsLoadingMap(true); // Block all saves during load
     setIsLoaded(false);
 
     const NODES_KEY = `goalmap_nodes_${mapId}`;
@@ -115,15 +117,22 @@ export function useGoalMapStorage(mapId: string = 'default') {
       setLoadedMapId(mapId);
     } finally {
       setIsLoaded(true);
+      // Use setTimeout to ensure state updates are processed before allowing saves
+      setTimeout(() => {
+        console.log(`[Load] Finished loading map ${mapId}, enabling saves`);
+        setIsLoadingMap(false);
+      }, 0);
     }
   }, [mapId, loadedMapId, needsLoad]);
 
   // Save data to localStorage whenever it changes
   useEffect(() => {
-    // Don't save if not loaded or currently switching maps
-    if (!isLoaded || needsLoad) {
+    // Don't save if not loaded, currently switching maps, or actively loading
+    if (!isLoaded || needsLoad || isLoadingMap) {
       if (needsLoad) {
         console.log('[Save] Blocked: Currently switching maps');
+      } else if (isLoadingMap) {
+        console.log('[Save] Blocked: Map is loading');
       }
       return;
     }
@@ -141,7 +150,7 @@ export function useGoalMapStorage(mapId: string = 'default') {
     } catch (error) {
       console.error('Error saving goal map data:', error);
     }
-  }, [nodes, edges, viewport, isLoaded, needsLoad, loadedMapId]);
+  }, [nodes, edges, viewport, isLoaded, needsLoad, isLoadingMap, loadedMapId]);
 
   /**
    * Add a new goal node to the canvas
