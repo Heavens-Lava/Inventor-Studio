@@ -1,3 +1,11 @@
+export interface DrawingElement {
+  type: 'pen' | 'rectangle' | 'circle' | 'line' | 'eraser';
+  points: Array<{ x: number; y: number }>;
+  strokeColor: string;
+  fillColor: string;
+  strokeWidth: number;
+}
+
 export interface Note {
   id: string;
   title: string;
@@ -20,6 +28,9 @@ export interface Note {
   // Stats
   wordCount: number;
   characterCount: number;
+
+  // Drawing data
+  drawingData?: DrawingElement[];
 }
 
 export interface Notebook {

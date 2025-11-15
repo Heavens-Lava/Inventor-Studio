@@ -33,6 +33,7 @@ export default function NotesApp() {
   const [searchQuery, setSearchQuery] = useState('');
   const [editingTitle, setEditingTitle] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState('');
+  const [editingDrawingData, setEditingDrawingData] = useState<any[]>([]);
 
   // Get filtered notes (non-archived by default, sorted by updated date)
   const filteredNotes = filterAndSortNotes(
@@ -89,6 +90,11 @@ export default function NotesApp() {
     setEditingContent(content);
   }, []);
 
+  // Handle drawing data changes
+  const handleDrawingChange = useCallback((data: any[]) => {
+    setEditingDrawingData(data);
+  }, []);
+
   // Auto-save effect with debounce
   useEffect(() => {
     if (!activeNoteId || !activeNote) return;
@@ -103,6 +109,7 @@ export default function NotesApp() {
           plainText,
           wordCount,
           characterCount: plainText.length,
+          drawingData: editingDrawingData,
         });
       } catch (error) {
         console.error('Failed to save content:', error);
@@ -110,7 +117,7 @@ export default function NotesApp() {
     }, 1000); // Auto-save after 1 second of no typing
 
     return () => clearTimeout(timer);
-  }, [editingContent, activeNoteId, activeNote, updateNote]);
+  }, [editingContent, editingDrawingData, activeNoteId, activeNote, updateNote]);
 
   // Start editing a note
   const handleSelectNote = (noteId: string) => {
@@ -118,6 +125,7 @@ export default function NotesApp() {
     const note = notes.find((n) => n.id === noteId);
     if (note) {
       setEditingContent(note.content);
+      setEditingDrawingData(note.drawingData || []);
     }
   };
 
@@ -280,6 +288,8 @@ export default function NotesApp() {
                 <NoteEditor
                   content={editingContent}
                   onChange={handleContentChange}
+                  drawingData={editingDrawingData}
+                  onDrawingChange={handleDrawingChange}
                   placeholder="Start typing your note..."
                 />
               </div>
