@@ -1,9 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { addEdge, Connection, Edge, applyNodeChanges, applyEdgeChanges, NodeChange, EdgeChange } from 'reactflow';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { addEdge, Connection, applyNodeChanges, applyEdgeChanges, NodeChange, EdgeChange } from 'reactflow';
 import {
   GoalMapNode,
   GoalMapEdge,
-  GoalMapData,
   GoalNodeData,
   MilestoneNodeData,
   RequirementNodeData,
@@ -15,54 +14,115 @@ import {
 } from '@/types/goalMap';
 import { Goal } from '@/types/goal';
 
-const STORAGE_KEY = 'daily-haven-goal-map';
-
 /**
  * Hook for managing goal map data with localStorage persistence
+ * Supports multiple maps with proper state synchronization
  */
-export function useGoalMapStorage() {
+export function useGoalMapStorage(mapId: string = 'default') {
   const [nodes, setNodes] = useState<GoalMapNode[]>([]);
   const [edges, setEdges] = useState<GoalMapEdge[]>([]);
   const [viewport, setViewport] = useState<GoalMapViewport>(defaultViewport);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isSwitching, setIsSwitching] = useState(false);
 
-  // Load data from localStorage
+  const loadedMapIdRef = useRef<string | null>(null);
+
+  console.log('[useGoalMapStorage] mapId:', mapId, 'loadedMapId:', loadedMapIdRef.current, 'needsLoad:', mapId !== loadedMapIdRef.current, 'isLoaded:', isLoaded);
+
+  // Load data from localStorage when mapId changes
   useEffect(() => {
-    const loadData = () => {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const data: GoalMapData = JSON.parse(stored);
-          setNodes(data.nodes || []);
-          setEdges(data.edges || []);
-          setViewport(data.viewport || defaultViewport);
-        }
-      } catch (error) {
-        console.error('Error loading goal map data:', error);
-      } finally {
-        setIsLoaded(true);
-      }
-    };
+    const needsLoad = mapId !== loadedMapIdRef.current;
 
-    loadData();
-  }, []);
+    if (!needsLoad) {
+      console.log('[Load] Skipping load - already loaded map', mapId);
+      return;
+    }
+
+    console.log('[Load] Starting load for map', mapId, '(was', loadedMapIdRef.current, ')');
+
+    // CRITICAL FIX: Set switching flag and clear state IMMEDIATELY
+    // This prevents the old state from being saved to the new map
+    setIsSwitching(true);
+    setIsLoaded(false);
+
+    // Clear state immediately to prevent UI from showing old data
+    setNodes([]);
+    setEdges([]);
+    setViewport(defaultViewport);
+
+    // Small delay to ensure state is cleared before loading
+    const timeoutId = setTimeout(() => {
+      try {
+        const nodesKey = `goalmap_nodes_${mapId}`;
+        const edgesKey = `goalmap_edges_${mapId}`;
+        const viewportKey = `goalmap_viewport_${mapId}`;
+
+        console.log('[Load] localStorage keys:', { nodesKey, edgesKey, viewportKey });
+
+        const storedNodes = localStorage.getItem(nodesKey);
+        const storedEdges = localStorage.getItem(edgesKey);
+        const storedViewport = localStorage.getItem(viewportKey);
+
+        console.log('[Load] Raw localStorage data:', {
+          nodes: storedNodes ? 'found' : 'empty',
+          edges: storedEdges ? 'found' : 'empty',
+          viewport: storedViewport ? 'found' : 'empty',
+        });
+
+        const loadedNodes = storedNodes ? JSON.parse(storedNodes) : [];
+        const loadedEdges = storedEdges ? JSON.parse(storedEdges) : [];
+        const loadedViewport = storedViewport ? JSON.parse(storedViewport) : defaultViewport;
+
+        console.log('[Load] Parsed data for map', mapId + ':', loadedNodes.length, 'nodes,', loadedEdges.length, 'edges');
+        console.log('[Load] Setting state:', { nodes: loadedNodes.length, edges: loadedEdges.length });
+
+        // Set all state at once
+        setNodes(loadedNodes);
+        setEdges(loadedEdges);
+        setViewport(loadedViewport);
+
+        // Mark as loaded and done switching
+        loadedMapIdRef.current = mapId;
+        setIsLoaded(true);
+        setIsSwitching(false);
+      } catch (error) {
+        console.error('[Load] Error loading goal map data:', error);
+        setNodes([]);
+        setEdges([]);
+        setViewport(defaultViewport);
+        loadedMapIdRef.current = mapId;
+        setIsLoaded(true);
+        setIsSwitching(false);
+      }
+    }, 50); // Small delay to ensure React has processed the clear
+
+    return () => clearTimeout(timeoutId);
+  }, [mapId]);
 
   // Save data to localStorage whenever it changes
   useEffect(() => {
-    if (!isLoaded) return;
+    // CRITICAL FIX: Don't save if we're switching maps or not loaded yet
+    if (!isLoaded || isSwitching) {
+      if (isSwitching) {
+        console.log('[Save] Blocked: Currently switching maps');
+      }
+      return;
+    }
 
-    const data: GoalMapData = {
-      nodes,
-      edges,
-      viewport,
-    };
+    console.log('[Save] Saving to map', mapId + ':', nodes.length, 'nodes,', edges.length, 'edges');
 
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      const nodesKey = `goalmap_nodes_${mapId}`;
+      const edgesKey = `goalmap_edges_${mapId}`;
+      const viewportKey = `goalmap_viewport_${mapId}`;
+
+      localStorage.setItem(nodesKey, JSON.stringify(nodes));
+      localStorage.setItem(edgesKey, JSON.stringify(edges));
+      localStorage.setItem(viewportKey, JSON.stringify(viewport));
     } catch (error) {
-      console.error('Error saving goal map data:', error);
+      console.error('[Save] Error saving goal map data:', error);
     }
-  }, [nodes, edges, viewport, isLoaded]);
+  }, [nodes, edges, viewport, mapId, isLoaded, isSwitching]);
 
   /**
    * Add a new goal node to the canvas
@@ -292,6 +352,7 @@ export function useGoalMapStorage() {
     edges,
     viewport,
     isLoaded,
+    isSwitching,
     addGoalNode,
     addMilestoneNode,
     addRequirementNode,

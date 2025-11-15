@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -10,12 +10,14 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { useGoalMapStorage } from "@/hooks/useGoalMapStorage";
+import { useGoalMapList } from "@/hooks/useGoalMapList";
 import { useGoalStorage } from "@/hooks/useGoalStorage";
 import { GoalMapCard } from "@/components/GoalMapCard";
 import { MilestoneCard } from "@/components/MilestoneCard";
 import { RequirementCard } from "@/components/RequirementCard";
 import { NoteCard } from "@/components/NoteCard";
 import { CustomEdge } from "@/components/CustomEdge";
+import { GoalMapManager } from "@/components/GoalMapManager";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -78,6 +80,10 @@ function GoalMapCanvasInner() {
   const navigate = useNavigate();
   const { fitView, zoomIn, zoomOut, screenToFlowPosition } = useReactFlow();
   const { goals, isLoaded: goalsLoaded } = useGoalStorage();
+
+  // Multi-map support
+  const { activeMapId, activeMap, updateMapMetadata } = useGoalMapList();
+
   const {
     nodes,
     edges,
@@ -93,7 +99,52 @@ function GoalMapCanvasInner() {
     removeEdge,
     clearCanvas,
     hasGoalNode,
-  } = useGoalMapStorage();
+  } = useGoalMapStorage(activeMapId);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('[GoalMapCanvas] Active Map:', activeMapId, ', Loaded:', mapLoaded, ', Nodes:', nodes.length, ', Edges:', edges.length);
+  }, [activeMapId, mapLoaded, nodes.length, edges.length]);
+
+  // Update map metadata when node count changes
+  useEffect(() => {
+    if (mapLoaded && activeMapId) {
+      updateMapMetadata(activeMapId, { nodeCount: nodes.length });
+    }
+  }, [nodes.length, mapLoaded, activeMapId, updateMapMetadata]);
+
+  // Debug: Log all maps data (helpful for debugging)
+  useEffect(() => {
+    if (mapLoaded) {
+      console.log('=== DEBUG: All Maps localStorage Data ===');
+      console.log('Active Map ID:', activeMapId);
+      console.log('All Maps:', JSON.parse(localStorage.getItem('goal-maps-list') || '[]'));
+
+      // Log current map data
+      const maps = JSON.parse(localStorage.getItem('goal-maps-list') || '[]');
+      maps.forEach((map: any) => {
+        const nodes = JSON.parse(localStorage.getItem(`goalmap_nodes_${map.id}`) || '[]');
+        const edges = JSON.parse(localStorage.getItem(`goalmap_edges_${map.id}`) || '[]');
+        const viewport = localStorage.getItem(`goalmap_viewport_${map.id}`);
+        console.log(`Map: ${map.name} (${map.id})`);
+        console.log(`Nodes (goalmap_nodes_${map.id}):`, nodes.length);
+        console.log(`Edges (goalmap_edges_${map.id}):`, edges.length);
+        console.log(`Viewport (goalmap_viewport_${map.id}):`, viewport);
+        if (nodes.length > 0) {
+          console.log('Raw nodes:', nodes);
+        }
+        if (edges.length > 0) {
+          console.log('Raw edges:', edges);
+        }
+      });
+
+      console.log('Current React State:');
+      console.log('nodes:', nodes.length, nodes);
+      console.log('edges:', edges.length, edges);
+      console.log('mapLoaded:', mapLoaded);
+      console.log('=== END DEBUG ===');
+    }
+  }, [mapLoaded, activeMapId, nodes, edges]);
 
   const [isAddGoalDialogOpen, setIsAddGoalDialogOpen] = useState(false);
   const [isAddCardDialogOpen, setIsAddCardDialogOpen] = useState(false);
@@ -325,6 +376,8 @@ function GoalMapCanvasInner() {
           <div className="h-6 w-px bg-gray-300" />
           <Target className="w-5 h-5 text-blue-600" />
           <h1 className="text-xl font-bold text-gray-900">Goal Map</h1>
+          <div className="h-6 w-px bg-gray-300" />
+          <GoalMapManager />
         </div>
 
         <div className="flex items-center gap-2">
