@@ -1,4 +1,4 @@
-import { Settings, Paintbrush, Clock, Sparkles } from "lucide-react";
+import { Settings, Paintbrush, Clock, Sparkles, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -35,6 +35,26 @@ const BACKGROUND_THEMES = [
 ];
 
 export const TodoSettings = ({ settings, onSettingsChange }: TodoSettingsProps) => {
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string;
+      onSettingsChange({ backgroundImage: base64 });
+    };
+    reader.readAsDataURL(file);
+
+    // Reset input value
+    event.target.value = '';
+  };
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -104,20 +124,105 @@ export const TodoSettings = ({ settings, onSettingsChange }: TodoSettingsProps) 
               )}
 
               {settings.backgroundType === "image" && (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="background-image">Image URL</Label>
+                    <input
+                      id="background-image"
+                      type="text"
+                      placeholder="Enter image URL..."
+                      value={settings.backgroundImage || ""}
+                      onChange={(e) =>
+                        onSettingsChange({ backgroundImage: e.target.value })
+                      }
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Enter a URL to a background image
+                    </p>
+                  </div>
+
+                  <div className="relative">
+                    <div className="flex items-center justify-center gap-2 my-2">
+                      <div className="flex-1 h-px bg-border"></div>
+                      <span className="text-xs text-muted-foreground">OR</span>
+                      <div className="flex-1 h-px bg-border"></div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="upload-image">Upload Image</Label>
+                    <div className="flex gap-2">
+                      <input
+                        id="upload-image"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => document.getElementById('upload-image')?.click()}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Upload from Computer
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Upload an image from your device
+                    </p>
+                  </div>
+
+                  {settings.backgroundImage && (
+                    <div className="space-y-2">
+                      <Label>Preview</Label>
+                      <div
+                        className="w-full h-24 rounded-md bg-cover bg-center border"
+                        style={{
+                          backgroundImage: `url(${settings.backgroundImage})`
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onSettingsChange({ backgroundImage: '' })}
+                        className="w-full"
+                      >
+                        Clear Image
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {settings.backgroundType === "custom" && (
                 <div className="space-y-2">
-                  <Label htmlFor="background-image">Image URL</Label>
-                  <input
-                    id="background-image"
-                    type="text"
-                    placeholder="Enter image URL..."
-                    value={settings.backgroundImage || ""}
-                    onChange={(e) =>
-                      onSettingsChange({ backgroundImage: e.target.value })
-                    }
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
+                  <Label htmlFor="background-color">Custom Color</Label>
+                  <div className="flex gap-2">
+                    <input
+                      id="background-color"
+                      type="color"
+                      value={settings.backgroundColor || "#ffffff"}
+                      onChange={(e) =>
+                        onSettingsChange({ backgroundColor: e.target.value })
+                      }
+                      className="h-10 w-20 rounded-md border border-input cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      placeholder="#ffffff"
+                      value={settings.backgroundColor || "#ffffff"}
+                      onChange={(e) =>
+                        onSettingsChange({ backgroundColor: e.target.value })
+                      }
+                      className="flex h-10 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    />
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    Enter a URL to a background image
+                    Choose a custom background color
                   </p>
                 </div>
               )}

@@ -349,6 +349,8 @@ const TodoApp = () => {
           backgroundSize: "cover",
           backgroundPosition: "center",
         }
+      : settings.backgroundType === "custom" && settings.backgroundColor
+      ? { backgroundColor: settings.backgroundColor }
       : {};
 
   if (!isLoaded) {
