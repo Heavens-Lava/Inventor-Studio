@@ -27,6 +27,13 @@ import {
   DialogTrigger,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -56,6 +63,7 @@ import {
   Redo2,
   Copy,
   Keyboard,
+  Menu,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -524,8 +532,8 @@ function GoalMapCanvasInner() {
             maskColor="rgba(0, 0, 0, 0.1)"
           />
 
-          {/* Toolbar Panel */}
-          <Panel position="top-right" className="space-y-2">
+          {/* Toolbar Panel - Hidden on mobile */}
+          <Panel position="top-right" className="hidden lg:block space-y-2">
             <Card className="p-2 space-y-2 shadow-lg">
               {/* Undo/Redo Controls */}
               <div className="flex gap-1">
@@ -1019,6 +1027,39 @@ function GoalMapCanvasInner() {
             </Card>
           </Panel>
 
+          {/* Mobile Compact Toolbar - Hidden on desktop */}
+          <Panel position="bottom-right" className="lg:hidden">
+            <div className="flex flex-col gap-2">
+              <Button
+                size="lg"
+                className="rounded-full w-12 h-12 shadow-lg"
+                onClick={() => setIsAddGoalDialogOpen(true)}
+                title="Add Goal"
+              >
+                <Target className="w-5 h-5" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="rounded-full w-12 h-12 shadow-lg bg-white"
+                onClick={() => setIsAddCardDialogOpen(true)}
+                title="Add Card"
+              >
+                <Plus className="w-5 h-5" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="rounded-full w-12 h-12 shadow-lg bg-white"
+                onClick={handleUndo}
+                disabled={!canUndo}
+                title="Undo"
+              >
+                <Undo2 className="w-5 h-5" />
+              </Button>
+            </div>
+          </Panel>
+
           {/* Empty State */}
           {nodes.length === 0 && (
             <Panel position="top-center" className="pointer-events-none">
@@ -1205,19 +1246,22 @@ function GoalMapCanvasInner() {
       </Dialog>
 
       {/* Instructions Footer */}
-      <div className="bg-white border-t border-gray-200 px-4 py-2">
-        <div className="flex items-center justify-center gap-6 text-xs text-gray-600">
+      <div className="bg-white border-t border-gray-200 px-2 sm:px-4 py-2">
+        <div className="flex items-center justify-center gap-2 sm:gap-6 text-xs text-gray-600 flex-wrap">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-blue-500 rounded-full" />
-            <span>Drag cards to reposition</span>
+            <span className="hidden sm:inline">Drag cards to reposition</span>
+            <span className="sm:hidden">Drag cards</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-blue-500 rounded-full" />
-            <span>Connect handles to link items</span>
+            <span className="hidden sm:inline">Connect handles to link items</span>
+            <span className="sm:hidden">Connect</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-blue-500 rounded-full" />
-            <span>Double-click to edit • Press ? for shortcuts</span>
+            <span className="hidden sm:inline">Double-click to edit • Press ? for shortcuts</span>
+            <span className="sm:hidden">Double-click to edit</span>
           </div>
         </div>
       </div>
