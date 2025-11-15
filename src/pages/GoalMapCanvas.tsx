@@ -445,7 +445,7 @@ function GoalMapCanvasInner() {
         // ReactFlow handles this internally
       }
       // ? = Show keyboard shortcuts
-      else if (event.key === '?' && !event.shiftKey) {
+      else if (event.key === '?') {
         event.preventDefault();
         setIsShortcutsDialogOpen(true);
       }
