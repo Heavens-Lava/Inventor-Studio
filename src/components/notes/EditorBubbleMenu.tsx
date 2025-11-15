@@ -30,9 +30,10 @@ export function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
       tippyOptions={{
         duration: 100,
         placement: 'top',
+        maxWidth: 'none',
       }}
-      className="bg-white border border-gray-200 rounded-lg shadow-lg flex items-center gap-1 p-1"
     >
+      <div className="bg-white border border-gray-200 rounded-lg shadow-lg flex items-center gap-1 p-1">
       <Button
         variant={editor.isActive('bold') ? 'secondary' : 'ghost'}
         size="sm"
@@ -88,6 +89,7 @@ export function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
       >
         <LinkIcon className="w-4 h-4" />
       </Button>
+      </div>
     </BubbleMenu>
   );
 }

@@ -18,6 +18,19 @@ import {
 
 const STORAGE_KEY = 'fitness_tracker_data';
 
+// UUID generator that works in all environments
+const generateUUID = (): string => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback UUID generation
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
 const getInitialData = (): FitnessData => {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored) {
@@ -32,7 +45,7 @@ const getInitialData = (): FitnessData => {
   return {
     user: {
       profile: {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         name: 'Fitness User',
         createdAt: new Date().toISOString(),
       },
@@ -125,7 +138,7 @@ export const useFitnessData = () => {
     const xpEarned = XP_REWARDS.WORKOUT_LOG + workout.duration * XP_REWARDS.WORKOUT_BONUS_PER_MINUTE;
     const newWorkout: Workout = {
       ...workout,
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       xpEarned,
     };
 
@@ -216,7 +229,7 @@ export const useFitnessData = () => {
   const addSleepLog = (sleep: Omit<SleepLog, 'id'>) => {
     const newSleep: SleepLog = {
       ...sleep,
-      id: crypto.randomUUID(),
+      id: generateUUID(),
     };
 
     setData((prev) => ({
@@ -236,7 +249,7 @@ export const useFitnessData = () => {
   const addMoodLog = (mood: Omit<MoodLog, 'id'>) => {
     const newMood: MoodLog = {
       ...mood,
-      id: crypto.randomUUID(),
+      id: generateUUID(),
     };
 
     setData((prev) => ({
@@ -256,7 +269,7 @@ export const useFitnessData = () => {
   const addGoal = (goal: Omit<Goal, 'id'>) => {
     const newGoal: Goal = {
       ...goal,
-      id: crypto.randomUUID(),
+      id: generateUUID(),
     };
 
     setData((prev) => ({
@@ -354,7 +367,7 @@ export const useFitnessData = () => {
   const addChallenge = (challenge: Omit<Challenge, 'id' | 'progress' | 'isCompleted'>) => {
     const newChallenge: Challenge = {
       ...challenge,
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       progress: 0,
       isCompleted: false,
     };
