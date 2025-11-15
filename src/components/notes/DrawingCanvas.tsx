@@ -123,9 +123,9 @@ export function DrawingCanvas({
       }
       ctx.stroke();
     } else if (element.type === 'eraser') {
-      // Erase by drawing with white
+      // Erase by drawing with white (larger size for better erasing)
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = element.strokeWidth * 2;
+      ctx.lineWidth = element.strokeWidth * 5;
       ctx.beginPath();
       ctx.moveTo(element.points[0].x, element.points[0].y);
       for (let i = 1; i < element.points.length; i++) {
