@@ -24,6 +24,10 @@ import {
   Table as TableIcon,
   FileCode,
   ImagePlus,
+  Columns,
+  Rows,
+  Trash,
+  Plus,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -408,6 +412,126 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
             <p>Insert Table</p>
           </TooltipContent>
         </Tooltip>
+
+        {/* Table Controls - Only visible when in a table */}
+        {editor.isActive('table') && (
+          <>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => editor.chain().focus().addColumnBefore().run()}
+                >
+                  <Columns className="w-4 h-4" />
+                  <Plus className="w-3 h-3 -ml-1" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Add Column Before</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => editor.chain().focus().addColumnAfter().run()}
+                >
+                  <Plus className="w-3 h-3 -mr-1" />
+                  <Columns className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Add Column After</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => editor.chain().focus().deleteColumn().run()}
+                >
+                  <Columns className="w-4 h-4" />
+                  <Trash className="w-3 h-3 -ml-1" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Delete Column</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => editor.chain().focus().addRowBefore().run()}
+                >
+                  <Rows className="w-4 h-4" />
+                  <Plus className="w-3 h-3 -ml-1" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Add Row Before</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => editor.chain().focus().addRowAfter().run()}
+                >
+                  <Plus className="w-3 h-3 -mr-1" />
+                  <Rows className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Add Row After</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => editor.chain().focus().deleteRow().run()}
+                >
+                  <Rows className="w-4 h-4" />
+                  <Trash className="w-3 h-3 -ml-1" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Delete Row</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => editor.chain().focus().deleteTable().run()}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <TableIcon className="w-4 h-4" />
+                  <Trash className="w-3 h-3 -ml-1" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Delete Table</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Separator orientation="vertical" className="h-6 mx-1" />
+          </>
+        )}
 
         {/* Code Block */}
         <Tooltip>
