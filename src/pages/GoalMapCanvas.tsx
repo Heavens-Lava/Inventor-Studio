@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -7,23 +7,36 @@ import ReactFlow, {
   useReactFlow,
   ReactFlowProvider,
   EdgeMouseHandler,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
-import { useGoalMapStorage } from '@/hooks/useGoalMapStorage';
-import { useGoalStorage } from '@/hooks/useGoalStorage';
-import { GoalMapCard } from '@/components/GoalMapCard';
-import { MilestoneCard } from '@/components/MilestoneCard';
-import { RequirementCard } from '@/components/RequirementCard';
-import { NoteCard } from '@/components/NoteCard';
-import { CustomEdge } from '@/components/CustomEdge';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+} from "reactflow";
+import "reactflow/dist/style.css";
+import { useGoalMapStorage } from "@/hooks/useGoalMapStorage";
+import { useGoalStorage } from "@/hooks/useGoalStorage";
+import { GoalMapCard } from "@/components/GoalMapCard";
+import { MilestoneCard } from "@/components/MilestoneCard";
+import { RequirementCard } from "@/components/RequirementCard";
+import { NoteCard } from "@/components/NoteCard";
+import { CustomEdge } from "@/components/CustomEdge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Plus,
   Trash2,
@@ -37,10 +50,10 @@ import {
   Wrench,
   StickyNote,
   Edit,
-} from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
-import { ConnectionMode, edgeStyles } from '@/types/goalMap';
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { ConnectionMode, edgeStyles } from "@/types/goalMap";
 
 // Define node types for ReactFlow
 const nodeTypes = {
@@ -55,7 +68,7 @@ const edgeTypes = {
   smoothstep: CustomEdge,
 };
 
-type CardType = 'goal' | 'milestone' | 'requirement' | 'note';
+type CardType = "goal" | "milestone" | "requirement" | "note";
 
 /**
  * GoalMapCanvasInner Component
@@ -85,35 +98,39 @@ function GoalMapCanvasInner() {
   const [isAddGoalDialogOpen, setIsAddGoalDialogOpen] = useState(false);
   const [isAddCardDialogOpen, setIsAddCardDialogOpen] = useState(false);
   const [isEditEdgeDialogOpen, setIsEditEdgeDialogOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCardType, setSelectedCardType] = useState<CardType>('milestone');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCardType, setSelectedCardType] =
+    useState<CardType>("milestone");
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
-  const [edgeRelationType, setEdgeRelationType] = useState<ConnectionMode>('related');
-  const [edgeAnimationDirection, setEdgeAnimationDirection] = useState<'forward' | 'reverse'>('forward');
+  const [edgeRelationType, setEdgeRelationType] =
+    useState<ConnectionMode>("related");
+  const [edgeAnimationDirection, setEdgeAnimationDirection] = useState<
+    "forward" | "reverse"
+  >("forward");
 
   // Form states for new cards
   const [milestoneForm, setMilestoneForm] = useState({
-    title: '',
-    description: '',
-    targetDate: '',
+    title: "",
+    description: "",
+    targetDate: "",
     completed: false,
-    color: 'blue',
+    color: "blue",
   });
 
   const [requirementForm, setRequirementForm] = useState({
-    title: '',
-    description: '',
-    requirementType: 'skill' as const,
+    title: "",
+    description: "",
+    requirementType: "skill" as const,
     completed: false,
     cost: 0,
-    priority: 'medium' as const,
+    priority: "medium" as const,
   });
 
   const [noteForm, setNoteForm] = useState({
-    title: '',
-    description: '',
-    content: '',
-    color: 'yellow',
+    title: "",
+    description: "",
+    content: "",
+    color: "yellow",
     tags: [] as string[],
   });
 
@@ -135,20 +152,23 @@ function GoalMapCanvasInner() {
   }, [availableGoals, searchQuery]);
 
   // Handle adding a goal to the canvas
-  const handleAddGoal = useCallback((goalId: string) => {
-    const goal = goals.find((g) => g.id === goalId);
-    if (!goal) return;
+  const handleAddGoal = useCallback(
+    (goalId: string) => {
+      const goal = goals.find((g) => g.id === goalId);
+      if (!goal) return;
 
-    const position = screenToFlowPosition({
-      x: window.innerWidth / 2 - 140,
-      y: window.innerHeight / 2 - 150,
-    });
+      const position = screenToFlowPosition({
+        x: window.innerWidth / 2 - 140,
+        y: window.innerHeight / 2 - 150,
+      });
 
-    addGoalNode(goal, position);
-    toast.success(`Added "${goal.title}" to canvas`);
-    setIsAddGoalDialogOpen(false);
-    setSearchQuery('');
-  }, [goals, addGoalNode, screenToFlowPosition]);
+      addGoalNode(goal, position);
+      toast.success(`Added "${goal.title}" to canvas`);
+      setIsAddGoalDialogOpen(false);
+      setSearchQuery("");
+    },
+    [goals, addGoalNode, screenToFlowPosition]
+  );
 
   // Handle adding a new card (milestone, requirement, note)
   const handleAddCard = useCallback(() => {
@@ -158,54 +178,54 @@ function GoalMapCanvasInner() {
     });
 
     try {
-      if (selectedCardType === 'milestone') {
+      if (selectedCardType === "milestone") {
         if (!milestoneForm.title.trim()) {
-          toast.error('Please enter a milestone title');
+          toast.error("Please enter a milestone title");
           return;
         }
         addMilestoneNode(milestoneForm, position);
-        toast.success('Milestone added to canvas');
+        toast.success("Milestone added to canvas");
         setMilestoneForm({
-          title: '',
-          description: '',
-          targetDate: '',
+          title: "",
+          description: "",
+          targetDate: "",
           completed: false,
-          color: 'blue',
+          color: "blue",
         });
-      } else if (selectedCardType === 'requirement') {
+      } else if (selectedCardType === "requirement") {
         if (!requirementForm.title.trim()) {
-          toast.error('Please enter a requirement title');
+          toast.error("Please enter a requirement title");
           return;
         }
         addRequirementNode(requirementForm, position);
-        toast.success('Requirement added to canvas');
+        toast.success("Requirement added to canvas");
         setRequirementForm({
-          title: '',
-          description: '',
-          requirementType: 'skill',
+          title: "",
+          description: "",
+          requirementType: "skill",
           completed: false,
           cost: 0,
-          priority: 'medium',
+          priority: "medium",
         });
-      } else if (selectedCardType === 'note') {
+      } else if (selectedCardType === "note") {
         if (!noteForm.title.trim()) {
-          toast.error('Please enter a note title');
+          toast.error("Please enter a note title");
           return;
         }
         addNoteNode(noteForm, position);
-        toast.success('Note added to canvas');
+        toast.success("Note added to canvas");
         setNoteForm({
-          title: '',
-          description: '',
-          content: '',
-          color: 'yellow',
+          title: "",
+          description: "",
+          content: "",
+          color: "yellow",
           tags: [],
         });
       }
 
       setIsAddCardDialogOpen(false);
     } catch (error) {
-      toast.error('Failed to add card');
+      toast.error("Failed to add card");
       console.error(error);
     }
   }, [
@@ -223,8 +243,10 @@ function GoalMapCanvasInner() {
   const handleEdgeClick: EdgeMouseHandler = useCallback((event, edge) => {
     event.stopPropagation();
     setSelectedEdgeId(edge.id);
-    setEdgeRelationType((edge.data?.relationshipType as ConnectionMode) || 'related');
-    setEdgeAnimationDirection(edge.data?.animationDirection || 'forward');
+    setEdgeRelationType(
+      (edge.data?.relationshipType as ConnectionMode) || "related"
+    );
+    setEdgeAnimationDirection(edge.data?.animationDirection || "forward");
     setIsEditEdgeDialogOpen(true);
   }, []);
 
@@ -235,7 +257,7 @@ function GoalMapCanvasInner() {
         relationshipType: edgeRelationType,
         animationDirection: edgeAnimationDirection,
       });
-      toast.success('Connection updated');
+      toast.success("Connection updated");
       setIsEditEdgeDialogOpen(false);
       setSelectedEdgeId(null);
     }
@@ -244,9 +266,9 @@ function GoalMapCanvasInner() {
   // Handle edge deletion
   const handleDeleteEdge = useCallback(() => {
     if (selectedEdgeId) {
-      if (confirm('Are you sure you want to delete this connection?')) {
+      if (confirm("Are you sure you want to delete this connection?")) {
         removeEdge(selectedEdgeId);
-        toast.success('Connection deleted');
+        toast.success("Connection deleted");
         setIsEditEdgeDialogOpen(false);
         setSelectedEdgeId(null);
       }
@@ -256,13 +278,17 @@ function GoalMapCanvasInner() {
   // Handle clearing the canvas
   const handleClearCanvas = useCallback(() => {
     if (nodes.length === 0) {
-      toast.info('Canvas is already empty');
+      toast.info("Canvas is already empty");
       return;
     }
 
-    if (confirm('Are you sure you want to clear the entire canvas? This cannot be undone.')) {
+    if (
+      confirm(
+        "Are you sure you want to clear the entire canvas? This cannot be undone."
+      )
+    ) {
       clearCanvas();
-      toast.success('Canvas cleared');
+      toast.success("Canvas cleared");
     }
   }, [nodes.length, clearCanvas]);
 
@@ -272,12 +298,9 @@ function GoalMapCanvasInner() {
   }, [fitView]);
 
   // Update viewport when it changes
-  const handleMoveEnd = useCallback(
-    (event: any, viewport: any) => {
-      // Viewport is auto-saved via the hook
-    },
-    []
-  );
+  const handleMoveEnd = useCallback((event: any, viewport: any) => {
+    // Viewport is auto-saved via the hook
+  }, []);
 
   if (!goalsLoaded || !mapLoaded) {
     return (
@@ -295,7 +318,7 @@ function GoalMapCanvasInner() {
       {/* Top Bar */}
       <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/goals')}>
+          <Button variant="ghost" size="sm" onClick={() => navigate("/goals")}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Goals
           </Button>
@@ -306,7 +329,7 @@ function GoalMapCanvasInner() {
 
         <div className="flex items-center gap-2">
           <Badge variant="secondary">
-            {nodes.length} {nodes.length === 1 ? 'card' : 'cards'} on canvas
+            {nodes.length} {nodes.length === 1 ? "card" : "cards"} on canvas
           </Badge>
         </div>
       </div>
@@ -327,7 +350,7 @@ function GoalMapCanvasInner() {
           minZoom={0.1}
           maxZoom={2}
           defaultEdgeOptions={{
-            type: 'smoothstep',
+            type: "smoothstep",
             animated: true,
             style: { strokeWidth: 2 },
           }}
@@ -336,17 +359,17 @@ function GoalMapCanvasInner() {
           <Controls />
           <MiniMap
             nodeColor={(node) => {
-              if (node.type === 'goalCard') {
+              if (node.type === "goalCard") {
                 const status = node.data.status;
-                if (status === 'completed') return '#22c55e';
-                if (status === 'in-progress') return '#3b82f6';
-                if (status === 'on-hold') return '#f59e0b';
-                return '#9ca3af';
+                if (status === "completed") return "#22c55e";
+                if (status === "in-progress") return "#3b82f6";
+                if (status === "on-hold") return "#f59e0b";
+                return "#9ca3af";
               }
-              if (node.type === 'milestoneCard') return '#3b82f6';
-              if (node.type === 'requirementCard') return '#10b981';
-              if (node.type === 'noteCard') return '#fbbf24';
-              return '#6b7280';
+              if (node.type === "milestoneCard") return "#3b82f6";
+              if (node.type === "requirementCard") return "#10b981";
+              if (node.type === "noteCard") return "#fbbf24";
+              return "#6b7280";
             }}
             maskColor="rgba(0, 0, 0, 0.1)"
           />
@@ -354,7 +377,10 @@ function GoalMapCanvasInner() {
           {/* Toolbar Panel */}
           <Panel position="top-right" className="space-y-2">
             <Card className="p-2 space-y-2 shadow-lg">
-              <Dialog open={isAddGoalDialogOpen} onOpenChange={setIsAddGoalDialogOpen}>
+              <Dialog
+                open={isAddGoalDialogOpen}
+                onOpenChange={setIsAddGoalDialogOpen}
+              >
                 <DialogTrigger asChild>
                   <Button size="sm" className="w-full">
                     <Target className="w-4 h-4 mr-2" />
@@ -364,7 +390,9 @@ function GoalMapCanvasInner() {
                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
                   <DialogHeader>
                     <DialogTitle>Add Goal to Canvas</DialogTitle>
-                    <DialogDescription>Select a goal from your goals list to add to the canvas</DialogDescription>
+                    <DialogDescription>
+                      Select a goal from your goals list to add to the canvas
+                    </DialogDescription>
                   </DialogHeader>
 
                   <div className="mb-4">
@@ -387,9 +415,9 @@ function GoalMapCanvasInner() {
                             <Target className="w-12 h-12 mx-auto mb-2 text-gray-400" />
                             <p>All goals are already on the canvas!</p>
                             <p className="text-sm mt-1">
-                              Create new goals in the{' '}
+                              Create new goals in the{" "}
                               <button
-                                onClick={() => navigate('/goals/create')}
+                                onClick={() => navigate("/goals/create")}
                                 className="text-blue-600 hover:underline"
                               >
                                 Goals page
@@ -412,7 +440,9 @@ function GoalMapCanvasInner() {
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-sm mb-1">{goal.title}</h3>
+                              <h3 className="font-semibold text-sm mb-1">
+                                {goal.title}
+                              </h3>
                               {goal.description && (
                                 <p className="text-xs text-gray-600 line-clamp-2 mb-2">
                                   {goal.description}
@@ -422,8 +452,11 @@ function GoalMapCanvasInner() {
                                 <Badge variant="outline" className="text-xs">
                                   {goal.type}
                                 </Badge>
-                                <Badge variant="outline" className="text-xs capitalize">
-                                  {goal.status.replace('-', ' ')}
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs capitalize"
+                                >
+                                  {goal.status.replace("-", " ")}
                                 </Badge>
                                 <Badge variant="outline" className="text-xs">
                                   {goal.progress}%
@@ -441,7 +474,10 @@ function GoalMapCanvasInner() {
                 </DialogContent>
               </Dialog>
 
-              <Dialog open={isAddCardDialogOpen} onOpenChange={setIsAddCardDialogOpen}>
+              <Dialog
+                open={isAddCardDialogOpen}
+                onOpenChange={setIsAddCardDialogOpen}
+              >
                 <DialogTrigger asChild>
                   <Button size="sm" variant="outline" className="w-full">
                     <Plus className="w-4 h-4 mr-2" />
@@ -451,13 +487,20 @@ function GoalMapCanvasInner() {
                 <DialogContent className="max-w-md">
                   <DialogHeader>
                     <DialogTitle>Add New Card</DialogTitle>
-                    <DialogDescription>Create a milestone, requirement, or note card</DialogDescription>
+                    <DialogDescription>
+                      Create a milestone, requirement, or note card
+                    </DialogDescription>
                   </DialogHeader>
 
                   <div className="space-y-4">
                     <div>
                       <Label>Card Type</Label>
-                      <Select value={selectedCardType} onValueChange={(v) => setSelectedCardType(v as CardType)}>
+                      <Select
+                        value={selectedCardType}
+                        onValueChange={(v) =>
+                          setSelectedCardType(v as CardType)
+                        }
+                      >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -484,13 +527,18 @@ function GoalMapCanvasInner() {
                       </Select>
                     </div>
 
-                    {selectedCardType === 'milestone' && (
+                    {selectedCardType === "milestone" && (
                       <>
                         <div>
                           <Label>Title *</Label>
                           <Input
                             value={milestoneForm.title}
-                            onChange={(e) => setMilestoneForm({ ...milestoneForm, title: e.target.value })}
+                            onChange={(e) =>
+                              setMilestoneForm({
+                                ...milestoneForm,
+                                title: e.target.value,
+                              })
+                            }
                             placeholder="Milestone title"
                           />
                         </div>
@@ -498,7 +546,12 @@ function GoalMapCanvasInner() {
                           <Label>Description</Label>
                           <Textarea
                             value={milestoneForm.description}
-                            onChange={(e) => setMilestoneForm({ ...milestoneForm, description: e.target.value })}
+                            onChange={(e) =>
+                              setMilestoneForm({
+                                ...milestoneForm,
+                                description: e.target.value,
+                              })
+                            }
                             placeholder="Optional description"
                             rows={3}
                           />
@@ -508,14 +561,21 @@ function GoalMapCanvasInner() {
                           <Input
                             type="date"
                             value={milestoneForm.targetDate}
-                            onChange={(e) => setMilestoneForm({ ...milestoneForm, targetDate: e.target.value })}
+                            onChange={(e) =>
+                              setMilestoneForm({
+                                ...milestoneForm,
+                                targetDate: e.target.value,
+                              })
+                            }
                           />
                         </div>
                         <div>
                           <Label>Color</Label>
                           <Select
                             value={milestoneForm.color}
-                            onValueChange={(v) => setMilestoneForm({ ...milestoneForm, color: v })}
+                            onValueChange={(v) =>
+                              setMilestoneForm({ ...milestoneForm, color: v })
+                            }
                           >
                             <SelectTrigger>
                               <SelectValue />
@@ -533,13 +593,18 @@ function GoalMapCanvasInner() {
                       </>
                     )}
 
-                    {selectedCardType === 'requirement' && (
+                    {selectedCardType === "requirement" && (
                       <>
                         <div>
                           <Label>Title *</Label>
                           <Input
                             value={requirementForm.title}
-                            onChange={(e) => setRequirementForm({ ...requirementForm, title: e.target.value })}
+                            onChange={(e) =>
+                              setRequirementForm({
+                                ...requirementForm,
+                                title: e.target.value,
+                              })
+                            }
                             placeholder="Requirement title"
                           />
                         </div>
@@ -547,7 +612,12 @@ function GoalMapCanvasInner() {
                           <Label>Description</Label>
                           <Textarea
                             value={requirementForm.description}
-                            onChange={(e) => setRequirementForm({ ...requirementForm, description: e.target.value })}
+                            onChange={(e) =>
+                              setRequirementForm({
+                                ...requirementForm,
+                                description: e.target.value,
+                              })
+                            }
                             placeholder="Optional description"
                             rows={3}
                           />
@@ -556,7 +626,12 @@ function GoalMapCanvasInner() {
                           <Label>Type</Label>
                           <Select
                             value={requirementForm.requirementType}
-                            onValueChange={(v: any) => setRequirementForm({ ...requirementForm, requirementType: v })}
+                            onValueChange={(v: any) =>
+                              setRequirementForm({
+                                ...requirementForm,
+                                requirementType: v,
+                              })
+                            }
                           >
                             <SelectTrigger>
                               <SelectValue />
@@ -565,7 +640,9 @@ function GoalMapCanvasInner() {
                               <SelectItem value="skill">Skill</SelectItem>
                               <SelectItem value="resource">Resource</SelectItem>
                               <SelectItem value="tool">Tool</SelectItem>
-                              <SelectItem value="knowledge">Knowledge</SelectItem>
+                              <SelectItem value="knowledge">
+                                Knowledge
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -573,7 +650,12 @@ function GoalMapCanvasInner() {
                           <Label>Priority</Label>
                           <Select
                             value={requirementForm.priority}
-                            onValueChange={(v: any) => setRequirementForm({ ...requirementForm, priority: v })}
+                            onValueChange={(v: any) =>
+                              setRequirementForm({
+                                ...requirementForm,
+                                priority: v,
+                              })
+                            }
                           >
                             <SelectTrigger>
                               <SelectValue />
@@ -591,7 +673,10 @@ function GoalMapCanvasInner() {
                             type="number"
                             value={requirementForm.cost}
                             onChange={(e) =>
-                              setRequirementForm({ ...requirementForm, cost: parseFloat(e.target.value) || 0 })
+                              setRequirementForm({
+                                ...requirementForm,
+                                cost: parseFloat(e.target.value) || 0,
+                              })
                             }
                             placeholder="0"
                           />
@@ -599,13 +684,18 @@ function GoalMapCanvasInner() {
                       </>
                     )}
 
-                    {selectedCardType === 'note' && (
+                    {selectedCardType === "note" && (
                       <>
                         <div>
                           <Label>Title *</Label>
                           <Input
                             value={noteForm.title}
-                            onChange={(e) => setNoteForm({ ...noteForm, title: e.target.value })}
+                            onChange={(e) =>
+                              setNoteForm({
+                                ...noteForm,
+                                title: e.target.value,
+                              })
+                            }
                             placeholder="Note title"
                           />
                         </div>
@@ -613,7 +703,12 @@ function GoalMapCanvasInner() {
                           <Label>Description</Label>
                           <Input
                             value={noteForm.description}
-                            onChange={(e) => setNoteForm({ ...noteForm, description: e.target.value })}
+                            onChange={(e) =>
+                              setNoteForm({
+                                ...noteForm,
+                                description: e.target.value,
+                              })
+                            }
                             placeholder="Optional subtitle"
                           />
                         </div>
@@ -621,14 +716,24 @@ function GoalMapCanvasInner() {
                           <Label>Content</Label>
                           <Textarea
                             value={noteForm.content}
-                            onChange={(e) => setNoteForm({ ...noteForm, content: e.target.value })}
+                            onChange={(e) =>
+                              setNoteForm({
+                                ...noteForm,
+                                content: e.target.value,
+                              })
+                            }
                             placeholder="Note content..."
                             rows={4}
                           />
                         </div>
                         <div>
                           <Label>Color</Label>
-                          <Select value={noteForm.color} onValueChange={(v) => setNoteForm({ ...noteForm, color: v })}>
+                          <Select
+                            value={noteForm.color}
+                            onValueChange={(v) =>
+                              setNoteForm({ ...noteForm, color: v })
+                            }
+                          >
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
@@ -647,7 +752,9 @@ function GoalMapCanvasInner() {
 
                     <Button onClick={handleAddCard} className="w-full">
                       <Plus className="w-4 h-4 mr-2" />
-                      Add {selectedCardType.charAt(0).toUpperCase() + selectedCardType.slice(1)}
+                      Add{" "}
+                      {selectedCardType.charAt(0).toUpperCase() +
+                        selectedCardType.slice(1)}
                     </Button>
                   </div>
                 </DialogContent>
@@ -655,24 +762,44 @@ function GoalMapCanvasInner() {
 
               <div className="h-px bg-gray-200" />
 
-              <Button size="sm" variant="outline" className="w-full" onClick={handleFitView}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                onClick={handleFitView}
+              >
                 <Maximize className="w-4 h-4 mr-2" />
                 Fit View
               </Button>
 
-              <Button size="sm" variant="outline" className="w-full" onClick={() => zoomIn()}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                onClick={() => zoomIn()}
+              >
                 <ZoomIn className="w-4 h-4 mr-2" />
                 Zoom In
               </Button>
 
-              <Button size="sm" variant="outline" className="w-full" onClick={() => zoomOut()}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                onClick={() => zoomOut()}
+              >
                 <ZoomOut className="w-4 h-4 mr-2" />
                 Zoom Out
               </Button>
 
               <div className="h-px bg-gray-200" />
 
-              <Button size="sm" variant="destructive" className="w-full" onClick={handleClearCanvas}>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="w-full"
+                onClick={handleClearCanvas}
+              >
                 <Trash2 className="w-4 h-4 mr-2" />
                 Clear Canvas
               </Button>
@@ -684,16 +811,26 @@ function GoalMapCanvasInner() {
             <Panel position="top-center" className="pointer-events-none">
               <Card className="p-6 text-center bg-white/90 backdrop-blur">
                 <Target className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-                <h2 className="text-lg font-semibold mb-2">Start Mapping Your Goals</h2>
+                <h2 className="text-lg font-semibold mb-2">
+                  Start Mapping Your Goals
+                </h2>
                 <p className="text-sm text-gray-600 mb-4">
-                  Add goals, milestones, requirements, and notes to the canvas and connect them
+                  Add goals, milestones, requirements, and notes to the canvas
+                  and connect them
                 </p>
                 <div className="flex gap-2 justify-center pointer-events-auto">
-                  <Button size="sm" onClick={() => setIsAddGoalDialogOpen(true)}>
+                  <Button
+                    size="sm"
+                    onClick={() => setIsAddGoalDialogOpen(true)}
+                  >
                     <Target className="w-4 h-4 mr-2" />
                     Add Goal
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setIsAddCardDialogOpen(true)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsAddCardDialogOpen(true)}
+                  >
                     <Plus className="w-4 h-4 mr-2" />
                     Add Card
                   </Button>
@@ -705,17 +842,25 @@ function GoalMapCanvasInner() {
       </div>
 
       {/* Edge Edit Dialog */}
-      <Dialog open={isEditEdgeDialogOpen} onOpenChange={setIsEditEdgeDialogOpen}>
+      <Dialog
+        open={isEditEdgeDialogOpen}
+        onOpenChange={setIsEditEdgeDialogOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Connection</DialogTitle>
-            <DialogDescription>Customize the connection between cards</DialogDescription>
+            <DialogDescription>
+              Customize the connection between cards
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
               <Label>Relationship Type</Label>
-              <Select value={edgeRelationType} onValueChange={(v) => setEdgeRelationType(v as ConnectionMode)}>
+              <Select
+                value={edgeRelationType}
+                onValueChange={(v) => setEdgeRelationType(v as ConnectionMode)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -737,13 +882,22 @@ function GoalMapCanvasInner() {
 
             <div>
               <Label>Animation Direction</Label>
-              <Select value={edgeAnimationDirection} onValueChange={(v) => setEdgeAnimationDirection(v as 'forward' | 'reverse')}>
+              <Select
+                value={edgeAnimationDirection}
+                onValueChange={(v) =>
+                  setEdgeAnimationDirection(v as "forward" | "reverse")
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="forward">Forward (Source → Target)</SelectItem>
-                  <SelectItem value="reverse">Reverse (Target → Source)</SelectItem>
+                  <SelectItem value="forward">
+                    Forward (Source → Target)
+                  </SelectItem>
+                  <SelectItem value="reverse">
+                    Reverse (Target → Source)
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -753,13 +907,21 @@ function GoalMapCanvasInner() {
                 <Edit className="w-4 h-4 mr-2" />
                 Update
               </Button>
-              <Button variant="outline" onClick={() => setIsEditEdgeDialogOpen(false)} className="flex-1">
+              <Button
+                variant="outline"
+                onClick={() => setIsEditEdgeDialogOpen(false)}
+                className="flex-1"
+              >
                 Cancel
               </Button>
             </div>
 
             <div className="border-t pt-4">
-              <Button variant="destructive" onClick={handleDeleteEdge} className="w-full">
+              <Button
+                variant="destructive"
+                onClick={handleDeleteEdge}
+                className="w-full"
+              >
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete Connection
               </Button>
