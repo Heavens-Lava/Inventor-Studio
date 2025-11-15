@@ -27,18 +27,29 @@ export function useGoalMapStorage(mapId: string = 'default') {
   const [edges, setEdges] = useState<GoalMapEdge[]>([]);
   const [viewport, setViewport] = useState<GoalMapViewport>(defaultViewport);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [currentMapId, setCurrentMapId] = useState(mapId);
 
   // Generate storage keys for this specific map
   const NODES_KEY = `goalmap_nodes_${mapId}`;
   const EDGES_KEY = `goalmap_edges_${mapId}`;
   const VIEWPORT_KEY = `goalmap_viewport_${mapId}`;
 
+  // Immediately set isLoaded to false when mapId changes to prevent saving old data to new map
+  useEffect(() => {
+    if (mapId !== currentMapId) {
+      setIsLoaded(false);
+      // Clear state immediately to prevent old data from being saved to new map
+      setNodes([]);
+      setEdges([]);
+      setViewport(defaultViewport);
+      setCurrentMapId(mapId);
+    }
+  }, [mapId, currentMapId]);
+
   // Load data from localStorage when mapId changes
   useEffect(() => {
     const loadData = () => {
       try {
-        setIsLoaded(false);
-
         // Check if we need to migrate old data (only for default map)
         if (mapId === 'default') {
           const migrationComplete = localStorage.getItem(MIGRATION_FLAG_KEY);
