@@ -65,7 +65,7 @@ export function useGoalMapList() {
   }, []);
 
   // Create a new goal map
-  const createMap = useCallback((name: string, description?: string) => {
+  const createMap = useCallback((name: string, description?: string, autoSwitch: boolean = true) => {
     const newMap: GoalMapMetadata = {
       id: `map-${Date.now()}`,
       name,
@@ -75,6 +75,8 @@ export function useGoalMapList() {
       nodeCount: 0,
     };
 
+    console.log(`[useGoalMapList] Creating new map: ${newMap.id}, autoSwitch: ${autoSwitch}`);
+
     // Initialize empty storage for the new map
     localStorage.setItem(`goalmap_nodes_${newMap.id}`, JSON.stringify([]));
     localStorage.setItem(`goalmap_edges_${newMap.id}`, JSON.stringify([]));
@@ -82,6 +84,14 @@ export function useGoalMapList() {
 
     const updatedMaps = [...maps, newMap];
     saveMaps(updatedMaps);
+
+    // Auto-switch to new map if requested
+    if (autoSwitch) {
+      console.log(`[useGoalMapList] Auto-switching to new map: ${newMap.id}`);
+      setActiveMapId(newMap.id);
+      localStorage.setItem(ACTIVE_MAP_KEY, newMap.id);
+    }
+
     return newMap.id;
   }, [maps, saveMaps]);
 
@@ -132,9 +142,10 @@ export function useGoalMapList() {
 
   // Set active map
   const setActiveMap = useCallback((mapId: string) => {
+    console.log(`[useGoalMapList] Setting active map from ${activeMapId} to ${mapId}`);
     setActiveMapId(mapId);
     localStorage.setItem(ACTIVE_MAP_KEY, mapId);
-  }, []);
+  }, [activeMapId]);
 
   // Duplicate a map
   const duplicateMap = useCallback((mapId: string, newName: string) => {

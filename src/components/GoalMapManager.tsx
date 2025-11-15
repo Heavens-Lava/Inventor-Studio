@@ -37,16 +37,16 @@ export const GoalMapManager = memo(({ open, onOpenChange }: GoalMapManagerProps)
       return;
     }
 
-    const newMapId = createMap(newMapName.trim(), newMapDescription.trim());
+    // createMap will auto-switch to the new map
+    const newMapId = createMap(newMapName.trim(), newMapDescription.trim(), true);
+    console.log(`[GoalMapManager] Created and switched to map: ${newMapId}`);
+
     toast.success(`Created "${newMapName}"`);
     setNewMapName('');
     setNewMapDescription('');
     setIsCreateDialogOpen(false);
-
-    // Switch to the new map
-    setActiveMap(newMapId);
     onOpenChange(false);
-  }, [newMapName, newMapDescription, createMap, setActiveMap, onOpenChange]);
+  }, [newMapName, newMapDescription, createMap, onOpenChange]);
 
   const handleEditMap = useCallback(() => {
     if (!selectedMapId || !editMapName.trim()) {

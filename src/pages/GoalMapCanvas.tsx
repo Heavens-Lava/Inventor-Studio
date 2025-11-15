@@ -540,6 +540,11 @@ function GoalMapCanvasInner() {
   const currentMap = maps.find((m) => m.id === activeMapId);
   const currentMapName = sharedMapName || currentMap?.name || 'Goal Map';
 
+  // Debug: Log map state
+  useEffect(() => {
+    console.log(`[GoalMapCanvas] Active Map: ${activeMapId}, Loaded: ${mapLoaded}, Nodes: ${nodes.length}, Edges: ${edges.length}`);
+  }, [activeMapId, mapLoaded, nodes.length, edges.length]);
+
   // Check for shared map in URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -763,6 +768,9 @@ function GoalMapCanvasInner() {
           )}
           <Badge variant="secondary">
             {nodes.length} {nodes.length === 1 ? "card" : "cards"}
+          </Badge>
+          <Badge variant="outline" className="text-xs font-mono">
+            ID: {activeMapId}
           </Badge>
         </div>
       </div>

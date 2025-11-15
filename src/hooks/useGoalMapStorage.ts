@@ -32,11 +32,19 @@ export function useGoalMapStorage(mapId: string = 'default') {
   // Track if we're currently switching maps or need initial load
   const needsLoad = mapId !== loadedMapId;
 
+  // Log state changes for debugging
+  useEffect(() => {
+    console.log(`[useGoalMapStorage] mapId: ${mapId}, loadedMapId: ${loadedMapId}, needsLoad: ${needsLoad}, isLoaded: ${isLoaded}`);
+  }, [mapId, loadedMapId, needsLoad, isLoaded]);
+
   // Load data from localStorage when mapId changes or on initial mount
   useEffect(() => {
-    if (!needsLoad) return; // Only load if we need to switch or haven't loaded yet
+    if (!needsLoad) {
+      console.log(`[Load] Skipping load - already loaded map ${mapId}`);
+      return; // Only load if we need to switch or haven't loaded yet
+    }
 
-    console.log(`[Map Switch] Loading map ${mapId} (was ${loadedMapId})`);
+    console.log(`[Load] Starting load for map ${mapId} (was ${loadedMapId})`);
     setIsLoaded(false);
 
     const NODES_KEY = `goalmap_nodes_${mapId}`;
