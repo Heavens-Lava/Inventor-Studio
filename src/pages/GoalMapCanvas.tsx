@@ -18,6 +18,7 @@ import { useTemplateStorage } from "@/hooks/useTemplateStorage";
 import { useGoalMapList } from "@/hooks/useGoalMapList";
 import { useMapExport } from "@/hooks/useMapExport";
 import { useMapShare } from "@/hooks/useMapShare";
+import { useMapBackup } from "@/hooks/useMapBackup";
 import { GoalMapCard } from "@/components/GoalMapCard";
 import { MilestoneCard } from "@/components/MilestoneCard";
 import { RequirementCard } from "@/components/RequirementCard";
@@ -79,6 +80,7 @@ import {
   Share2,
   Image,
   FileImage,
+  Upload,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -111,6 +113,7 @@ function GoalMapCanvasInner() {
   const {
     nodes,
     edges,
+    viewport,
     isLoaded: mapLoaded,
     addGoalNode,
     addMilestoneNode,
@@ -135,6 +138,7 @@ function GoalMapCanvasInner() {
   const { loadTemplate, saveTemplate } = useTemplateStorage();
   const { exportAsPng, exportAsSvg } = useMapExport();
   const { copyShareLink, decodeMapData } = useMapShare();
+  const { exportBackup, importBackup } = useMapBackup();
 
   const [isAddGoalDialogOpen, setIsAddGoalDialogOpen] = useState(false);
   const [isAddCardDialogOpen, setIsAddCardDialogOpen] = useState(false);
@@ -578,6 +582,34 @@ function GoalMapCanvasInner() {
     setIsShareDialogOpen(false);
   }, [currentMapName, currentMap?.description, nodes, edges, copyShareLink]);
 
+  // Handle backup export
+  const handleBackupExport = useCallback(() => {
+    exportBackup(
+      activeMapId,
+      currentMapName,
+      currentMap?.description,
+      nodes,
+      edges,
+      viewport
+    );
+    toast.success('Backup exported successfully!');
+  }, [activeMapId, currentMapName, currentMap?.description, nodes, edges, viewport, exportBackup]);
+
+  // Handle backup import/restore
+  const handleBackupImport = useCallback(async () => {
+    try {
+      const backupData = await importBackup();
+
+      // Apply the backup data to the current map
+      setNodesState(backupData.nodes);
+      setEdgesState(backupData.edges);
+
+      toast.success(`Backup restored: ${backupData.mapName}`);
+    } catch (error) {
+      toast.error('Failed to import backup: ' + (error as Error).message);
+    }
+  }, [importBackup, setNodesState, setEdgesState]);
+
   // Update viewport when it changes
   const handleMoveEnd = useCallback((event: any, viewport: any) => {
     // Viewport is auto-saved via the hook
@@ -694,6 +726,25 @@ function GoalMapCanvasInner() {
               >
                 <Download className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Export</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBackupExport}
+                disabled={nodes.length === 0}
+                title="Download backup file"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Backup</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBackupImport}
+                title="Restore from backup file"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Restore</span>
               </Button>
               <Button
                 variant="outline"
