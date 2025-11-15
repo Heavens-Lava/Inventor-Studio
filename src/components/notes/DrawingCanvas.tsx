@@ -337,9 +337,8 @@ export const DrawingCanvas = forwardRef<HTMLCanvasElement, DrawingCanvasProps>(f
 
   // Update elements when canvasData prop changes
   useEffect(() => {
-    if (canvasData && canvasData.length > 0) {
-      setElements(canvasData);
-    }
+    // Always sync with canvasData prop, even if empty
+    setElements(canvasData);
   }, [canvasData]);
 
   return (

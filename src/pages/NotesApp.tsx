@@ -121,13 +121,20 @@ export default function NotesApp() {
 
   // Start editing a note
   const handleSelectNote = (noteId: string) => {
-    setActiveNoteId(noteId);
     const note = notes.find((n) => n.id === noteId);
     if (note) {
+      setActiveNoteId(noteId);
       setEditingContent(note.content);
       setEditingDrawingData(note.drawingData || []);
     }
   };
+
+  // Sync drawing data when active note changes
+  useEffect(() => {
+    if (activeNote) {
+      setEditingDrawingData(activeNote.drawingData || []);
+    }
+  }, [activeNoteId, activeNote]);
 
   // Handle updating title
   const handleUpdateTitle = async (noteId: string, newTitle: string) => {

@@ -24,14 +24,13 @@ export function DrawingEditor({ drawingData = [], onChange, onTextRecognized }: 
   const [historyIndex, setHistoryIndex] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Update elements when drawingData prop changes
+  // Update elements when drawingData prop changes (note switching)
   useEffect(() => {
-    if (drawingData && drawingData.length > 0 && elements.length === 0) {
-      setElements(drawingData);
-      setHistory([drawingData]);
-      setHistoryIndex(0);
-    }
-  }, [drawingData, elements.length]);
+    // Always sync with drawingData prop when it changes
+    setElements(drawingData);
+    setHistory([drawingData]);
+    setHistoryIndex(0);
+  }, [drawingData]);
 
   // Handle canvas changes
   const handleCanvasChange = useCallback(

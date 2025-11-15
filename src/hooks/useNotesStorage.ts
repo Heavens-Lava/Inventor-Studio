@@ -62,6 +62,7 @@ export function useNotesStorage() {
       isPinned: false,
       wordCount: 0,
       characterCount: 0,
+      drawingData: [], // Initialize with empty drawing data
     };
 
     await putInStore(STORES.NOTES, newNote);

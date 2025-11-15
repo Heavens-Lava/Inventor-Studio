@@ -123,6 +123,7 @@ export function NoteEditor({
           </div>
         </div>
         <DrawingEditor
+          key={`drawing-${JSON.stringify(drawingData?.slice(0, 1))}`}
           drawingData={drawingData}
           onChange={onDrawingChange}
           onTextRecognized={handleTextRecognized}
