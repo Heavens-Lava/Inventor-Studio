@@ -35,6 +35,7 @@ export function useGoalMapStorage(mapId: string = 'default') {
   // Detect map switch and prevent saves during transition
   useEffect(() => {
     if (mapId !== activeMapIdRef.current) {
+      console.log(`[Map Switch] Switching from ${activeMapIdRef.current} to ${mapId}`);
       isSwitchingRef.current = true;
       setIsLoaded(false);
       activeMapIdRef.current = mapId;
@@ -83,8 +84,13 @@ export function useGoalMapStorage(mapId: string = 'default') {
         const storedEdges = localStorage.getItem(EDGES_KEY);
         const storedViewport = localStorage.getItem(VIEWPORT_KEY);
 
-        setNodes(storedNodes ? JSON.parse(storedNodes) : []);
-        setEdges(storedEdges ? JSON.parse(storedEdges) : []);
+        const parsedNodes = storedNodes ? JSON.parse(storedNodes) : [];
+        const parsedEdges = storedEdges ? JSON.parse(storedEdges) : [];
+
+        console.log(`[Load] Map ${mapId}: ${parsedNodes.length} nodes, ${parsedEdges.length} edges`);
+
+        setNodes(parsedNodes);
+        setEdges(parsedEdges);
         setViewport(storedViewport ? JSON.parse(storedViewport) : defaultViewport);
       } catch (error) {
         console.error('Error loading goal map data:', error);
@@ -103,13 +109,20 @@ export function useGoalMapStorage(mapId: string = 'default') {
   // Save data to localStorage whenever it changes
   useEffect(() => {
     // Don't save if not loaded or currently switching maps
-    if (!isLoaded || isSwitchingRef.current) return;
+    if (!isLoaded || isSwitchingRef.current) {
+      if (isSwitchingRef.current) {
+        console.log('[Save] Blocked: Currently switching maps');
+      }
+      return;
+    }
 
     try {
       const currentMapId = activeMapIdRef.current;
       const NODES_KEY = `goalmap_nodes_${currentMapId}`;
       const EDGES_KEY = `goalmap_edges_${currentMapId}`;
       const VIEWPORT_KEY = `goalmap_viewport_${currentMapId}`;
+
+      console.log(`[Save] Saving to map ${currentMapId}: ${nodes.length} nodes, ${edges.length} edges`);
 
       localStorage.setItem(NODES_KEY, JSON.stringify(nodes));
       localStorage.setItem(EDGES_KEY, JSON.stringify(edges));
