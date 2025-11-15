@@ -75,6 +75,11 @@ export function useGoalMapList() {
       nodeCount: 0,
     };
 
+    // Initialize empty storage for the new map
+    localStorage.setItem(`goalmap_nodes_${newMap.id}`, JSON.stringify([]));
+    localStorage.setItem(`goalmap_edges_${newMap.id}`, JSON.stringify([]));
+    localStorage.setItem(`goalmap_viewport_${newMap.id}`, JSON.stringify({ x: 0, y: 0, zoom: 1 }));
+
     const updatedMaps = [...maps, newMap];
     saveMaps(updatedMaps);
     return newMap.id;
