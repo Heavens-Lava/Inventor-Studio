@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Note, Notebook, Tag, NotesFilter, NotesSortConfig } from '@/types/note';
+import type { Note, Notebook, Tag, NotesFilter, NotesSortConfig, NotesSettings } from '@/types/note';
 import {
   initNotesDB,
   getAllFromStore,
@@ -9,6 +9,9 @@ import {
   searchNotes as searchNotesInDB,
   STORES,
 } from '@/utils/notesIndexedDB';
+import { NOTES_BADGES } from '@/lib/notesGamification';
+
+const SETTINGS_KEY = 'notes-settings';
 
 /**
  * Hook for managing notes with IndexedDB persistence
@@ -19,6 +22,18 @@ export function useNotesStorage() {
   const [tags, setTags] = useState<Tag[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
+  const [settings, setSettings] = useState<NotesSettings>({
+    enableGamification: true,
+    userStats: {
+      totalPoints: 0,
+      level: 1,
+      badges: NOTES_BADGES.map(b => ({ ...b })),
+      notesCreated: 0,
+      totalWords: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+    },
+  });
 
   // Initialize database and load data
   useEffect(() => {
@@ -34,6 +49,18 @@ export function useNotesStorage() {
         setNotes(loadedNotes);
         setNotebooks(loadedNotebooks);
         setTags(loadedTags);
+
+        // Load settings from localStorage
+        const savedSettings = localStorage.getItem(SETTINGS_KEY);
+        if (savedSettings) {
+          try {
+            const parsed = JSON.parse(savedSettings);
+            setSettings(parsed);
+          } catch (e) {
+            console.error('Failed to parse settings:', e);
+          }
+        }
+
         setIsLoaded(true);
       } catch (error) {
         console.error('Failed to load notes data:', error);
@@ -282,6 +309,17 @@ export function useNotesStorage() {
     });
   }, [notes, updateNote]);
 
+  /**
+   * Update settings
+   */
+  const updateSettings = useCallback((updates: Partial<NotesSettings>) => {
+    setSettings((prev) => {
+      const newSettings = { ...prev, ...updates };
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(newSettings));
+      return newSettings;
+    });
+  }, []);
+
   return {
     // State
     notes,
@@ -290,6 +328,7 @@ export function useNotesStorage() {
     isLoaded,
     activeNoteId,
     setActiveNoteId,
+    settings,
 
     // Note operations
     createNote,
@@ -309,5 +348,8 @@ export function useNotesStorage() {
     createTag,
     addTagToNote,
     removeTagFromNote,
+
+    // Settings
+    updateSettings,
   };
 }

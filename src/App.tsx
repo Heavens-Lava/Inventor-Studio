@@ -34,6 +34,7 @@ import FitnessWellness from "./pages/FitnessWellness";
 import ActivityTracker from "./pages/ActivityTracker";
 import FitnessGoals from "./pages/FitnessGoals";
 import NotesApp from "./pages/NotesApp";
+import NotesStats from "./pages/NotesStats";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +78,7 @@ const App = () => (
             element={<FitnessAchievements />}
           />
           <Route path="/notes" element={<NotesApp />} />
+          <Route path="/notes/stats" element={<NotesStats />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

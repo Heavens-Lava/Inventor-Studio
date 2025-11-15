@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotesStorage } from '@/hooks/useNotesStorage';
 import { NoteEditor } from '@/components/notes/NoteEditor';
@@ -16,10 +16,19 @@ import {
   Pin,
   Tag as TagIcon,
   X,
+  TrendingUp,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { TagInput } from '@/components/notes/TagInput';
 import { Badge } from '@/components/ui/badge';
+import {
+  calculateNotePoints,
+  calculateNotesLevel,
+  updateWritingStreak,
+  checkNotesBadgeEarned,
+  NOTES_BADGES,
+} from '@/lib/notesGamification';
+import { NotesUserStats } from '@/types/note';
 
 export default function NotesApp() {
   const navigate = useNavigate();
@@ -36,6 +45,8 @@ export default function NotesApp() {
     filterAndSortNotes,
     addTagToNote,
     removeTagFromNote,
+    settings,
+    updateSettings,
   } = useNotesStorage();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,6 +54,67 @@ export default function NotesApp() {
   const [editingTitle, setEditingTitle] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState('');
   const [editingDrawingData, setEditingDrawingData] = useState<any[]>([]);
+
+  // Calculate user stats from notes
+  const userStats: NotesUserStats = useMemo(() => {
+    if (!settings.userStats) {
+      return {
+        totalPoints: 0,
+        level: 1,
+        badges: NOTES_BADGES.map(b => ({ ...b })),
+        notesCreated: 0,
+        totalWords: 0,
+        currentStreak: 0,
+        longestStreak: 0,
+      };
+    }
+
+    const totalWords = notes.reduce((sum, note) => sum + note.wordCount, 0);
+    const totalPoints = notes.reduce((sum, note) => sum + (note.points || 0), 0);
+    const level = calculateNotesLevel(totalPoints);
+
+    // Calculate current streak
+    let currentStreak = 0;
+    let longestStreak = 0;
+
+    notes.forEach((note) => {
+      if (note.streak) {
+        currentStreak = Math.max(currentStreak, note.streak.currentStreak);
+        longestStreak = Math.max(longestStreak, note.streak.longestStreak);
+      }
+    });
+
+    // Update badge progress
+    const badges = NOTES_BADGES.map((badge) => {
+      const earned = checkNotesBadgeEarned(
+        badge,
+        {
+          ...settings.userStats!,
+          notesCreated: notes.length,
+          totalWords,
+          currentStreak,
+          longestStreak,
+          totalPoints,
+        },
+        notes
+      );
+
+      return {
+        ...badge,
+        earnedAt: earned ? badge.earnedAt || new Date() : undefined,
+      };
+    });
+
+    return {
+      totalPoints,
+      level,
+      badges,
+      notesCreated: notes.length,
+      totalWords,
+      currentStreak,
+      longestStreak,
+    };
+  }, [notes, settings.userStats]);
 
   // Get all unique tags from all notes
   const allTags = Array.from(
@@ -158,20 +230,66 @@ export default function NotesApp() {
       const wordCount = plainText.trim().split(/\s+/).filter(Boolean).length;
 
       try {
-        await updateNote(activeNoteId, {
+        // Prepare note update with gamification
+        let noteUpdate = {
           content: editingContent,
           plainText,
           wordCount,
           characterCount: plainText.length,
           drawingData: editingDrawingData,
-        });
+        };
+
+        // Calculate gamification if enabled
+        if (settings.enableGamification) {
+          const updatedNoteData = {
+            ...activeNote,
+            ...noteUpdate,
+          };
+
+          // Update streak
+          const noteWithStreak = updateWritingStreak(updatedNoteData);
+
+          // Calculate points
+          const points = calculateNotePoints(noteWithStreak);
+
+          // Check for new badges
+          const newBadges = NOTES_BADGES.filter((badge) => {
+            const wasEarned = settings.userStats?.badges.find(
+              (b) => b.id === badge.id
+            )?.earnedAt;
+            const isNowEarned = checkNotesBadgeEarned(
+              badge,
+              {
+                ...userStats,
+                totalWords: userStats.totalWords + wordCount - activeNote.wordCount,
+                totalPoints: userStats.totalPoints + points - (activeNote.points || 0),
+              },
+              notes.map(n => n.id === activeNoteId ? noteWithStreak : n)
+            );
+            return !wasEarned && isNowEarned;
+          });
+
+          // Show notifications for new badges
+          newBadges.forEach((badge) => {
+            toast.success(`🏆 Badge Unlocked: ${badge.name}!`);
+          });
+
+          // Add gamification data to update
+          noteUpdate = {
+            ...noteUpdate,
+            points,
+            streak: noteWithStreak.streak,
+          };
+        }
+
+        await updateNote(activeNoteId, noteUpdate);
       } catch (error) {
         console.error('Failed to save content:', error);
       }
     }, 1000); // Auto-save after 1 second of no typing
 
     return () => clearTimeout(timer);
-  }, [editingContent, editingDrawingData, activeNoteId, activeNote, updateNote]);
+  }, [editingContent, editingDrawingData, activeNoteId, activeNote, updateNote, settings.enableGamification, settings.userStats, userStats, notes]);
 
   // Start editing a note
   const handleSelectNote = (noteId: string) => {
@@ -224,11 +342,30 @@ export default function NotesApp() {
           <div className="h-6 w-px bg-gray-300" />
           <Book className="w-5 h-5 text-blue-600" />
           <h1 className="text-xl font-bold text-gray-900">Notes</h1>
+          {settings.enableGamification && settings.userStats && (
+            <div className="flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-full text-sm font-semibold">
+              <span className="text-lg">⭐</span>
+              <span>Level {userStats.level}</span>
+            </div>
+          )}
         </div>
-        <Button onClick={handleCreateNote}>
-          <Plus className="w-4 h-4 mr-2" />
-          New Note
-        </Button>
+        <div className="flex gap-2">
+          {settings.enableGamification && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/notes/stats')}
+              className="flex items-center gap-2"
+            >
+              <TrendingUp className="h-4 w-4" />
+              View Stats
+            </Button>
+          )}
+          <Button onClick={handleCreateNote}>
+            <Plus className="w-4 h-4 mr-2" />
+            New Note
+          </Button>
+        </div>
       </div>
 
       {/* Main Content */}

@@ -6,6 +6,33 @@ export interface DrawingElement {
   strokeWidth: number;
 }
 
+export interface WritingStreakData {
+  currentStreak: number;
+  longestStreak: number;
+  writingDates: Date[];
+  lastWriteDate?: Date;
+}
+
+export interface NotesBadge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  earnedAt?: Date;
+  progress?: number;
+  requirement: number;
+}
+
+export interface NotesUserStats {
+  totalPoints: number;
+  level: number;
+  badges: NotesBadge[];
+  notesCreated: number;
+  totalWords: number;
+  currentStreak: number;
+  longestStreak: number;
+}
+
 export interface Note {
   id: string;
   title: string;
@@ -31,6 +58,10 @@ export interface Note {
 
   // Drawing data
   drawingData?: DrawingElement[];
+
+  // Gamification
+  points?: number;
+  streak?: WritingStreakData;
 }
 
 export interface Notebook {
@@ -67,4 +98,9 @@ export interface NotesFilter {
 export interface NotesSortConfig {
   sortBy: SortOption;
   direction: SortDirection;
+}
+
+export interface NotesSettings {
+  enableGamification: boolean;
+  userStats?: NotesUserStats;
 }
