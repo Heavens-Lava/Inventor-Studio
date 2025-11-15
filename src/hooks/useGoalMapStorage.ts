@@ -15,6 +15,9 @@ import {
 } from '@/types/goalMap';
 import { Goal } from '@/types/goal';
 
+const OLD_STORAGE_KEY = 'daily-haven-goal-map';
+const MIGRATION_FLAG_KEY = 'goalmap_migration_complete';
+
 /**
  * Hook for managing goal map data with localStorage persistence
  * @param mapId - The ID of the goal map to manage
@@ -35,6 +38,36 @@ export function useGoalMapStorage(mapId: string = 'default') {
     const loadData = () => {
       try {
         setIsLoaded(false);
+
+        // Check if we need to migrate old data (only for default map)
+        if (mapId === 'default') {
+          const migrationComplete = localStorage.getItem(MIGRATION_FLAG_KEY);
+          const oldData = localStorage.getItem(OLD_STORAGE_KEY);
+
+          if (!migrationComplete && oldData) {
+            try {
+              const parsed: GoalMapData = JSON.parse(oldData);
+
+              // Migrate to new storage format
+              if (parsed.nodes) {
+                localStorage.setItem(NODES_KEY, JSON.stringify(parsed.nodes));
+              }
+              if (parsed.edges) {
+                localStorage.setItem(EDGES_KEY, JSON.stringify(parsed.edges));
+              }
+              if (parsed.viewport) {
+                localStorage.setItem(VIEWPORT_KEY, JSON.stringify(parsed.viewport));
+              }
+
+              // Mark migration as complete
+              localStorage.setItem(MIGRATION_FLAG_KEY, 'true');
+
+              console.log('Successfully migrated old goal map data to new format');
+            } catch (migrationError) {
+              console.error('Error migrating old goal map data:', migrationError);
+            }
+          }
+        }
 
         const storedNodes = localStorage.getItem(NODES_KEY);
         const storedEdges = localStorage.getItem(EDGES_KEY);
