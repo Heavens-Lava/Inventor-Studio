@@ -27,14 +27,14 @@ export function useGoalMapStorage(mapId: string = 'default') {
   const [edges, setEdges] = useState<GoalMapEdge[]>([]);
   const [viewport, setViewport] = useState<GoalMapViewport>(defaultViewport);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [loadedMapId, setLoadedMapId] = useState(mapId);
+  const [loadedMapId, setLoadedMapId] = useState<string | null>(null);
 
-  // Track if we're currently switching maps
-  const isSwitching = mapId !== loadedMapId;
+  // Track if we're currently switching maps or need initial load
+  const needsLoad = mapId !== loadedMapId;
 
-  // Load data from localStorage when mapId changes
+  // Load data from localStorage when mapId changes or on initial mount
   useEffect(() => {
-    if (!isSwitching) return; // Only load if we need to switch
+    if (!needsLoad) return; // Only load if we need to switch or haven't loaded yet
 
     console.log(`[Map Switch] Loading map ${mapId} (was ${loadedMapId})`);
     setIsLoaded(false);
@@ -96,13 +96,13 @@ export function useGoalMapStorage(mapId: string = 'default') {
     } finally {
       setIsLoaded(true);
     }
-  }, [mapId, loadedMapId, isSwitching]);
+  }, [mapId, loadedMapId, needsLoad]);
 
   // Save data to localStorage whenever it changes
   useEffect(() => {
     // Don't save if not loaded or currently switching maps
-    if (!isLoaded || isSwitching) {
-      if (isSwitching) {
+    if (!isLoaded || needsLoad) {
+      if (needsLoad) {
         console.log('[Save] Blocked: Currently switching maps');
       }
       return;
@@ -121,7 +121,7 @@ export function useGoalMapStorage(mapId: string = 'default') {
     } catch (error) {
       console.error('Error saving goal map data:', error);
     }
-  }, [nodes, edges, viewport, isLoaded, isSwitching, loadedMapId]);
+  }, [nodes, edges, viewport, isLoaded, needsLoad, loadedMapId]);
 
   /**
    * Add a new goal node to the canvas
