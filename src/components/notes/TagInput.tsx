@@ -46,49 +46,48 @@ export function TagInput({ tags, onTagsChange, availableTags = [], placeholder =
   };
 
   return (
-    <div className="relative">
-      <div className="flex flex-wrap gap-1 mb-2">
+    <div className="relative flex-1">
+      <div className="flex items-center gap-1 flex-wrap">
         {tags.map((tag) => (
           <Badge
             key={tag}
             variant="secondary"
-            className="px-2 py-1 text-xs flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200"
+            className="px-2 py-0.5 text-xs flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200"
           >
             <TagIcon className="w-3 h-3" />
             {tag}
             <button
               onClick={() => removeTag(tag)}
-              className="ml-1 hover:text-blue-900 focus:outline-none"
+              className="ml-0.5 hover:text-blue-900 focus:outline-none"
             >
               <X className="w-3 h-3" />
             </button>
           </Badge>
         ))}
-      </div>
-
-      <div className="flex gap-2">
-        <Input
-          type="text"
-          value={inputValue}
-          onChange={(e) => {
-            setInputValue(e.target.value);
-            setShowSuggestions(e.target.value.length > 0);
-          }}
-          onKeyDown={handleKeyDown}
-          onFocus={() => inputValue && setShowSuggestions(true)}
-          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-          placeholder={placeholder}
-          className="flex-1 h-8 text-sm"
-        />
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => addTag(inputValue)}
-          disabled={!inputValue.trim()}
-          className="h-8 px-2"
-        >
-          <Plus className="w-4 h-4" />
-        </Button>
+        <div className="flex gap-1 flex-1 min-w-[120px]">
+          <Input
+            type="text"
+            value={inputValue}
+            onChange={(e) => {
+              setInputValue(e.target.value);
+              setShowSuggestions(e.target.value.length > 0);
+            }}
+            onKeyDown={handleKeyDown}
+            onFocus={() => inputValue && setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+            placeholder={placeholder}
+            className="flex-1 h-6 text-xs"
+          />
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => addTag(inputValue)}
+            disabled={!inputValue.trim()}
+            className="h-6 w-6 p-0"
+          >
+            <Plus className="w-3 h-3" />
+          </Button>
+        </div>
       </div>
 
       {/* Tag Suggestions */}

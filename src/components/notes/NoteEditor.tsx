@@ -365,48 +365,52 @@ export function NoteEditor({
   );
 
   return (
-    <div className="note-editor h-full bg-gray-50 relative">
-      {/* Desktop: Horizontal panels, Mobile: Vertical panels */}
-      <PanelGroup direction="horizontal" className="h-full hidden md:flex">
-        {isPanelsSwapped ? (
-          <>
-            {drawingPanel}
-            {!isTextCollapsed && !isDrawingCollapsed && (
-              <PanelResizeHandle className="w-1 bg-gray-300 hover:bg-blue-500 transition-colors cursor-col-resize" />
-            )}
-            {textPanel}
-          </>
-        ) : (
-          <>
-            {textPanel}
-            {!isTextCollapsed && !isDrawingCollapsed && (
-              <PanelResizeHandle className="w-1 bg-gray-300 hover:bg-blue-500 transition-colors cursor-col-resize" />
-            )}
-            {drawingPanel}
-          </>
-        )}
-      </PanelGroup>
+    <>
+      {/* Desktop: Horizontal panels */}
+      <div className="note-editor h-full bg-gray-50 relative hidden md:block">
+        <PanelGroup direction="horizontal" className="h-full">
+          {isPanelsSwapped ? (
+            <>
+              {drawingPanel}
+              {!isTextCollapsed && !isDrawingCollapsed && (
+                <PanelResizeHandle className="w-1 bg-gray-300 hover:bg-blue-500 transition-colors cursor-col-resize" />
+              )}
+              {textPanel}
+            </>
+          ) : (
+            <>
+              {textPanel}
+              {!isTextCollapsed && !isDrawingCollapsed && (
+                <PanelResizeHandle className="w-1 bg-gray-300 hover:bg-blue-500 transition-colors cursor-col-resize" />
+              )}
+              {drawingPanel}
+            </>
+          )}
+        </PanelGroup>
+      </div>
 
       {/* Mobile: Vertical layout */}
-      <PanelGroup direction="vertical" className="h-full flex md:hidden">
-        {isPanelsSwapped ? (
-          <>
-            {drawingPanel}
-            {!isTextCollapsed && !isDrawingCollapsed && (
-              <PanelResizeHandle className="h-1 bg-gray-300 hover:bg-blue-500 transition-colors cursor-row-resize" />
-            )}
-            {textPanel}
-          </>
-        ) : (
-          <>
-            {textPanel}
-            {!isTextCollapsed && !isDrawingCollapsed && (
-              <PanelResizeHandle className="h-1 bg-gray-300 hover:bg-blue-500 transition-colors cursor-row-resize" />
-            )}
-            {drawingPanel}
-          </>
-        )}
-      </PanelGroup>
-    </div>
+      <div className="note-editor h-full bg-gray-50 relative md:hidden">
+        <PanelGroup direction="vertical" className="h-full">
+          {isPanelsSwapped ? (
+            <>
+              {drawingPanel}
+              {!isTextCollapsed && !isDrawingCollapsed && (
+                <PanelResizeHandle className="h-1 bg-gray-300 hover:bg-blue-500 transition-colors cursor-row-resize" />
+              )}
+              {textPanel}
+            </>
+          ) : (
+            <>
+              {textPanel}
+              {!isTextCollapsed && !isDrawingCollapsed && (
+                <PanelResizeHandle className="h-1 bg-gray-300 hover:bg-blue-500 transition-colors cursor-row-resize" />
+              )}
+              {drawingPanel}
+            </>
+          )}
+        </PanelGroup>
+      </div>
+    </>
   );
 }
