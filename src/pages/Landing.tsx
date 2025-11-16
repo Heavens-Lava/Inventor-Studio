@@ -1,9 +1,12 @@
 import { ArrowRight, Sparkles, Zap, Shield, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { AppNavigation } from "@/components/AppNavigation";
 
 export default function Landing() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -14,25 +17,29 @@ export default function Landing() {
         <div className="absolute top-1/2 left-1/2 w-80 h-80 bg-indigo-400/10 rounded-full blur-3xl animate-pulse delay-500" />
       </div>
 
-      {/* Navigation */}
-      <nav className="relative z-10 container mx-auto px-6 py-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-8 h-8 text-blue-600" />
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Inventor Studio
-            </span>
+      {/* Navigation - Show AppNavigation if logged in, otherwise show simple nav */}
+      {user ? (
+        <AppNavigation />
+      ) : (
+        <nav className="relative z-10 container mx-auto px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-8 h-8 text-blue-600" />
+              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Inventor Studio
+              </span>
+            </div>
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" onClick={() => navigate('/login')}>
+                Login
+              </Button>
+              <Button onClick={() => navigate('/signup')}>
+                Get Started
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate('/login')}>
-              Login
-            </Button>
-            <Button onClick={() => navigate('/signup')}>
-              Get Started
-            </Button>
-          </div>
-        </div>
-      </nav>
+        </nav>
+      )}
 
       {/* Hero Section */}
       <main className="relative z-10 container mx-auto px-6 pt-20 pb-32">
@@ -57,24 +64,26 @@ export default function Landing() {
             and personal growth. Everything you need to turn ideas into reality.
           </p>
 
-          {/* CTA Buttons */}
+          {/* CTA Buttons - Change based on login status */}
           <div className="flex items-center justify-center gap-4">
             <Button
               size="lg"
               className="text-lg px-8 py-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
               onClick={() => navigate('/apps')}
             >
-              Explore Apps
+              {user ? 'Go to Apps' : 'Explore Apps'}
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="text-lg px-8 py-6"
-              onClick={() => navigate('/signup')}
-            >
-              Start Free
-            </Button>
+            {!user && (
+              <Button
+                size="lg"
+                variant="outline"
+                className="text-lg px-8 py-6"
+                onClick={() => navigate('/signup')}
+              >
+                Start Free
+              </Button>
+            )}
           </div>
         </div>
 

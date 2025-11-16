@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -25,12 +26,45 @@ export default function Signup() {
 
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name,
+          },
+        },
+      });
+
+      if (error) throw error;
+
+      // Create profile entry
+      if (data.user) {
+        const { error: profileError } = await supabase.from("profiles").insert({
+          id: data.user.id,
+          email: email,
+          name: name,
+          photos_taken: 0,
+          recipes_tried: 0,
+          lists_created: 0,
+          favorites_count: 0,
+          has_premium: false,
+        });
+
+        if (profileError) {
+          console.error("Profile creation error:", profileError);
+        }
+      }
+
       toast.success("Account created successfully!");
       navigate('/apps');
-    }, 1000);
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      toast.error(error.message || "Failed to create account");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

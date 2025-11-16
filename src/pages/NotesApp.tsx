@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useNotesStorage } from '@/hooks/useNotesStorage';
+import { useNotesSupabase } from '@/hooks/useNotesSupabase';
 import { NoteEditor } from '@/components/notes/NoteEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,7 +47,7 @@ export default function NotesApp() {
     removeTagFromNote,
     settings,
     updateSettings,
-  } = useNotesStorage();
+  } = useNotesSupabase();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -335,7 +335,7 @@ export default function NotesApp() {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/apps')}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>

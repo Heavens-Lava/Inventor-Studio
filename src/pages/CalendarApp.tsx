@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import AppHeader from "@/components/AppHeader";
-import { useCalendarStorage } from "@/hooks/useCalendarStorage";
+import { useCalendarSupabase } from "@/hooks/useCalendarSupabase";
 import { CalendarView, CalendarEvent } from "@/types/calendar";
 import { AddEventForm } from "@/components/calendar/AddEventForm";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,7 @@ const DAY_COLOR_PALETTE = [
 ];
 
 const CalendarApp = () => {
-  const { events, settings, isLoaded, addEvent, updateEvent, deleteEvent, updateSettings } = useCalendarStorage();
+  const { events, settings, isLoaded, addEvent, updateEvent, deleteEvent, updateSettings } = useCalendarSupabase();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<CalendarView>(settings.defaultView);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);

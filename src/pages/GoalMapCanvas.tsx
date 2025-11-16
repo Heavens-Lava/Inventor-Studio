@@ -11,7 +11,7 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import "@/styles/reactflow-custom.css";
-import { useGoalMapStorage } from "@/hooks/useGoalMapStorage";
+import { useGoalMapSupabase } from "@/hooks/useGoalMapSupabase";
 import { useGoalStorage } from "@/hooks/useGoalStorage";
 import { useUndoRedo } from "@/hooks/useUndoRedo";
 import { useTemplateStorage } from "@/hooks/useTemplateStorage";
@@ -133,7 +133,7 @@ function GoalMapCanvasInner() {
     updateNode,
     setNodesState,
     setEdgesState,
-  } = useGoalMapStorage(activeMapId);
+  } = useGoalMapSupabase(activeMapId);
 
   const { canUndo, canRedo, undo, redo, pushHistory, clearHistory } = useUndoRedo();
   const { loadTemplate, saveTemplate } = useTemplateStorage();

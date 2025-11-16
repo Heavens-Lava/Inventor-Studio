@@ -6,7 +6,7 @@ import { TodoItem } from "@/components/todo/TodoItem";
 import { TodoFilters } from "@/components/todo/TodoFilters";
 import { TodoSettings } from "@/components/todo/TodoSettings";
 import { ExportImport } from "@/components/todo/ExportImport";
-import { useTodoStorage } from "@/hooks/useTodoStorage";
+import { useTodoSupabase } from "@/hooks/useTodoSupabase";
 import { Task, TodoFilter, UserStats } from "@/types/todo";
 import { toast } from "sonner";
 import {
@@ -47,7 +47,7 @@ const TodoApp = () => {
     deleteTask,
     reorderTasks,
     updateSettings,
-  } = useTodoStorage();
+  } = useTodoSupabase();
 
   const [filter, setFilter] = useState<TodoFilter>({});
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);

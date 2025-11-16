@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Search, ArrowLeft, CheckSquare, Wallet, Lightbulb, Target, BookOpen, Calendar, TrendingUp, DollarSign, PiggyBank, Activity, StickyNote } from "lucide-react";
+import { Search, CheckSquare, Wallet, Lightbulb, Target, BookOpen, Calendar, TrendingUp, DollarSign, PiggyBank, Activity, StickyNote, ChefHat, ShoppingCart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import AppCard from "@/components/AppCard";
+import { AppNavigation } from "@/components/AppNavigation";
 
 export default function AppsExplorer() {
   const navigate = useNavigate();
@@ -106,6 +107,22 @@ export default function AppsExplorer() {
       gradient: "bg-gradient-to-br from-yellow-500 to-yellow-600",
       category: "productivity",
     },
+    {
+      title: "Recipes",
+      description: "Manage your favorite recipes with ingredients, instructions, and ratings",
+      icon: ChefHat,
+      route: "/recipes",
+      gradient: "bg-gradient-to-br from-orange-500 to-amber-600",
+      category: "lifestyle",
+    },
+    {
+      title: "Grocery List",
+      description: "Organize your shopping with categorized grocery lists and smart tracking",
+      icon: ShoppingCart,
+      route: "/grocery",
+      gradient: "bg-gradient-to-br from-green-500 to-emerald-600",
+      category: "lifestyle",
+    },
   ];
 
   const filteredApps = apps.filter(
@@ -117,6 +134,8 @@ export default function AppsExplorer() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <AppNavigation />
+
       {/* Animated Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl animate-pulse" />
@@ -125,20 +144,6 @@ export default function AppsExplorer() {
 
       {/* Header */}
       <div className="relative z-10 container mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <Button variant="ghost" onClick={() => navigate('/')} className="gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Home
-          </Button>
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate('/login')}>
-              Login
-            </Button>
-            <Button onClick={() => navigate('/signup')}>
-              Sign Up
-            </Button>
-          </div>
-        </div>
 
         {/* Search Section */}
         <div className="max-w-2xl mx-auto mb-12">

@@ -32,7 +32,7 @@ const AppHeader = ({ title }: AppHeaderProps) => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/apps")}
               className="hover:bg-primary/10 hover:text-primary flex-shrink-0"
             >
               <ArrowLeft className="h-5 w-5" />

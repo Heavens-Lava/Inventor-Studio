@@ -7,7 +7,8 @@
       "Bash(echo:*)",
       "Bash(npx tsc:*)",
       "Bash(npm install:*)",
-      "Bash(npx shadcn@latest add separator)"
+      "Bash(npx shadcn@latest add separator)",
+      "Bash(npm run build:dev:*)"
     ],
     "deny": [],
     "ask": []
