@@ -202,24 +202,36 @@ export function NoteEditor({
     return null;
   }
 
+  // Toggle text panel - either collapse drawing to show full text, or restore split view
+  const toggleTextPanel = () => {
+    if (isDrawingCollapsed) {
+      // Drawing is collapsed, restore split view
+      drawingPanelRef.current?.expand();
+      setTimeout(() => {
+        drawingPanelRef.current?.resize(drawingPanelSizeRef.current);
+        textPanelRef.current?.resize(textPanelSizeRef.current);
+      }, 0);
+    } else {
+      // Collapse drawing to show full text
+      const currentTextSize = textPanelRef.current?.getSize();
+      const currentDrawingSize = drawingPanelRef.current?.getSize();
+      if (currentTextSize) textPanelSizeRef.current = currentTextSize;
+      if (currentDrawingSize) drawingPanelSizeRef.current = currentDrawingSize;
+      drawingPanelRef.current?.collapse();
+    }
+  };
+
   const textPanel = (
     <Panel
       ref={textPanelRef}
       defaultSize={50}
       minSize={20}
       collapsible={true}
-      onCollapse={() => {
-        // Save current size before collapsing
-        const currentSize = textPanelRef.current?.getSize();
-        if (currentSize) {
-          textPanelSizeRef.current = currentSize;
-        }
-        setIsTextCollapsed(true);
-      }}
+      onCollapse={() => setIsTextCollapsed(true)}
       onExpand={() => setIsTextCollapsed(false)}
       onResize={(size) => {
         // Track size changes when not collapsed
-        if (!isTextCollapsed) {
+        if (!isTextCollapsed && !isDrawingCollapsed) {
           textPanelSizeRef.current = size;
         }
       }}
@@ -245,10 +257,10 @@ export function NoteEditor({
               variant="ghost"
               size="sm"
               className="ml-auto h-6 w-6 p-0"
-              onClick={() => textPanelRef.current?.collapse()}
-              title="Collapse Text Editor"
+              onClick={toggleTextPanel}
+              title={isDrawingCollapsed ? "Show Both Editors" : "Show Text Editor Only"}
             >
-              <ChevronLeft className="w-4 h-4" />
+              {isDrawingCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
             </Button>
           </div>
         </div>
@@ -261,24 +273,36 @@ export function NoteEditor({
     </Panel>
   );
 
+  // Toggle drawing panel - either collapse text to show full drawing, or restore split view
+  const toggleDrawingPanel = () => {
+    if (isTextCollapsed) {
+      // Text is collapsed, restore split view
+      textPanelRef.current?.expand();
+      setTimeout(() => {
+        textPanelRef.current?.resize(textPanelSizeRef.current);
+        drawingPanelRef.current?.resize(drawingPanelSizeRef.current);
+      }, 0);
+    } else {
+      // Collapse text to show full drawing
+      const currentTextSize = textPanelRef.current?.getSize();
+      const currentDrawingSize = drawingPanelRef.current?.getSize();
+      if (currentTextSize) textPanelSizeRef.current = currentTextSize;
+      if (currentDrawingSize) drawingPanelSizeRef.current = currentDrawingSize;
+      textPanelRef.current?.collapse();
+    }
+  };
+
   const drawingPanel = (
     <Panel
       ref={drawingPanelRef}
       defaultSize={50}
       minSize={20}
       collapsible={true}
-      onCollapse={() => {
-        // Save current size before collapsing
-        const currentSize = drawingPanelRef.current?.getSize();
-        if (currentSize) {
-          drawingPanelSizeRef.current = currentSize;
-        }
-        setIsDrawingCollapsed(true);
-      }}
+      onCollapse={() => setIsDrawingCollapsed(true)}
       onExpand={() => setIsDrawingCollapsed(false)}
       onResize={(size) => {
         // Track size changes when not collapsed
-        if (!isDrawingCollapsed) {
+        if (!isTextCollapsed && !isDrawingCollapsed) {
           drawingPanelSizeRef.current = size;
         }
       }}
@@ -305,10 +329,10 @@ export function NoteEditor({
               variant="ghost"
               size="sm"
               className="h-6 w-6 p-0"
-              onClick={() => drawingPanelRef.current?.collapse()}
-              title="Collapse Drawing Canvas"
+              onClick={toggleDrawingPanel}
+              title={isTextCollapsed ? "Show Both Editors" : "Show Drawing Canvas Only"}
             >
-              <ChevronRight className="w-4 h-4" />
+              {isTextCollapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </Button>
           </div>
         </div>
@@ -324,42 +348,6 @@ export function NoteEditor({
 
   return (
     <div className="note-editor h-full bg-gray-50 relative">
-      {/* Expand Buttons (shown when panels are collapsed) */}
-      {isTextCollapsed && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="absolute top-1/2 left-2 transform -translate-y-1/2 z-10 shadow-lg bg-white"
-          onClick={() => {
-            textPanelRef.current?.expand();
-            // Restore previous size after a brief delay to let expand complete
-            setTimeout(() => {
-              textPanelRef.current?.resize(textPanelSizeRef.current);
-            }, 0);
-          }}
-          title="Expand Text Editor"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-      )}
-      {isDrawingCollapsed && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="absolute top-1/2 right-2 transform -translate-y-1/2 z-10 shadow-lg bg-white"
-          onClick={() => {
-            drawingPanelRef.current?.expand();
-            // Restore previous size after a brief delay to let expand complete
-            setTimeout(() => {
-              drawingPanelRef.current?.resize(drawingPanelSizeRef.current);
-            }, 0);
-          }}
-          title="Expand Drawing Canvas"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </Button>
-      )}
-
       <PanelGroup direction="horizontal" className="h-full">
         {isPanelsSwapped ? (
           <>
