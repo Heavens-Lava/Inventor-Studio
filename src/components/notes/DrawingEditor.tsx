@@ -24,29 +24,31 @@ export function DrawingEditor({ drawingData = [], onChange, onTextRecognized }: 
   const [historyIndex, setHistoryIndex] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Track if the last change was from internal drawing (to avoid syncing back)
-  const isInternalChangeRef = useRef(false);
-  const lastDrawingDataRef = useRef<string>(JSON.stringify(drawingData));
+  // Track our own changes to prevent sync-back issues
+  const lastInternalChangeRef = useRef<string>(JSON.stringify(drawingData));
+  const pendingChangeTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Update elements when drawingData prop changes (note switching)
-  // Only reset history if the data is actually different and not from our own onChange
+  // Only reset if the data is actually different from what we sent
   useEffect(() => {
     const newDataStr = JSON.stringify(drawingData);
+    const lastInternalStr = lastInternalChangeRef.current;
 
-    // Skip if this change came from our own internal drawing
-    if (isInternalChangeRef.current) {
-      isInternalChangeRef.current = false;
-      lastDrawingDataRef.current = newDataStr;
+    // If this matches our last internal change, it's just our data coming back - ignore it
+    if (newDataStr === lastInternalStr) {
       return;
     }
 
-    // Only update if drawingData actually changed from an external source
-    if (newDataStr !== lastDrawingDataRef.current) {
-      setElements(drawingData);
-      setHistory([drawingData]);
-      setHistoryIndex(0);
-      lastDrawingDataRef.current = newDataStr;
+    // This is genuinely new external data (like switching notes)
+    // Clear any pending change tracking
+    if (pendingChangeTimeoutRef.current) {
+      clearTimeout(pendingChangeTimeoutRef.current);
     }
+
+    setElements(drawingData);
+    setHistory([drawingData]);
+    setHistoryIndex(0);
+    lastInternalChangeRef.current = newDataStr;
   }, [drawingData]);
 
   // Handle canvas changes
@@ -60,8 +62,9 @@ export function DrawingEditor({ drawingData = [], onChange, onTextRecognized }: 
       setHistory(newHistory);
       setHistoryIndex(newHistory.length - 1);
 
-      // Mark this as an internal change before notifying parent
-      isInternalChangeRef.current = true;
+      // Track this change before notifying parent
+      const newDataStr = JSON.stringify(newElements);
+      lastInternalChangeRef.current = newDataStr;
       onChange?.(newElements);
     },
     [history, historyIndex, onChange]
@@ -74,8 +77,8 @@ export function DrawingEditor({ drawingData = [], onChange, onTextRecognized }: 
       setHistoryIndex(newIndex);
       const previousElements = history[newIndex];
       setElements(previousElements);
-      // Mark as internal change
-      isInternalChangeRef.current = true;
+      // Track this change
+      lastInternalChangeRef.current = JSON.stringify(previousElements);
       onChange?.(previousElements);
     }
   }, [history, historyIndex, onChange]);
@@ -87,8 +90,8 @@ export function DrawingEditor({ drawingData = [], onChange, onTextRecognized }: 
       setHistoryIndex(newIndex);
       const nextElements = history[newIndex];
       setElements(nextElements);
-      // Mark as internal change
-      isInternalChangeRef.current = true;
+      // Track this change
+      lastInternalChangeRef.current = JSON.stringify(nextElements);
       onChange?.(nextElements);
     }
   }, [history, historyIndex, onChange]);
@@ -100,8 +103,8 @@ export function DrawingEditor({ drawingData = [], onChange, onTextRecognized }: 
       setElements(emptyElements);
       setHistory([...history.slice(0, historyIndex + 1), emptyElements]);
       setHistoryIndex(historyIndex + 1);
-      // Mark as internal change
-      isInternalChangeRef.current = true;
+      // Track this change
+      lastInternalChangeRef.current = JSON.stringify(emptyElements);
       onChange?.(emptyElements);
     }
   }, [history, historyIndex, onChange]);
@@ -159,8 +162,8 @@ export function DrawingEditor({ drawingData = [], onChange, onTextRecognized }: 
       setElements(beautifiedElements);
       setHistory([...history.slice(0, historyIndex + 1), beautifiedElements]);
       setHistoryIndex(historyIndex + 1);
-      // Mark as internal change
-      isInternalChangeRef.current = true;
+      // Track this change
+      lastInternalChangeRef.current = JSON.stringify(beautifiedElements);
       onChange?.(beautifiedElements);
 
       toast.success('Handwriting beautified!');
