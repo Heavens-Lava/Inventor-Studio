@@ -24,20 +24,30 @@ export function DrawingEditor({ drawingData = [], onChange, onTextRecognized }: 
   const [historyIndex, setHistoryIndex] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Update elements when drawingData prop changes (note switching)
-  // Only reset history if the data is actually different (not just a re-render)
-  useEffect(() => {
-    // Check if drawingData is actually different from current elements
-    // by comparing JSON strings (simple deep equality check)
-    const isSameData = JSON.stringify(drawingData) === JSON.stringify(elements);
+  // Track if the last change was from internal drawing (to avoid syncing back)
+  const isInternalChangeRef = useRef(false);
+  const lastDrawingDataRef = useRef<string>(JSON.stringify(drawingData));
 
-    if (!isSameData) {
-      // Only reset if data is actually different (e.g., switching notes)
+  // Update elements when drawingData prop changes (note switching)
+  // Only reset history if the data is actually different and not from our own onChange
+  useEffect(() => {
+    const newDataStr = JSON.stringify(drawingData);
+
+    // Skip if this change came from our own internal drawing
+    if (isInternalChangeRef.current) {
+      isInternalChangeRef.current = false;
+      lastDrawingDataRef.current = newDataStr;
+      return;
+    }
+
+    // Only update if drawingData actually changed from an external source
+    if (newDataStr !== lastDrawingDataRef.current) {
       setElements(drawingData);
       setHistory([drawingData]);
       setHistoryIndex(0);
+      lastDrawingDataRef.current = newDataStr;
     }
-  }, [drawingData]); // Intentionally not including elements in deps
+  }, [drawingData]);
 
   // Handle canvas changes
   const handleCanvasChange = useCallback(
@@ -50,7 +60,8 @@ export function DrawingEditor({ drawingData = [], onChange, onTextRecognized }: 
       setHistory(newHistory);
       setHistoryIndex(newHistory.length - 1);
 
-      // Notify parent
+      // Mark this as an internal change before notifying parent
+      isInternalChangeRef.current = true;
       onChange?.(newElements);
     },
     [history, historyIndex, onChange]
@@ -63,6 +74,8 @@ export function DrawingEditor({ drawingData = [], onChange, onTextRecognized }: 
       setHistoryIndex(newIndex);
       const previousElements = history[newIndex];
       setElements(previousElements);
+      // Mark as internal change
+      isInternalChangeRef.current = true;
       onChange?.(previousElements);
     }
   }, [history, historyIndex, onChange]);
@@ -74,6 +87,8 @@ export function DrawingEditor({ drawingData = [], onChange, onTextRecognized }: 
       setHistoryIndex(newIndex);
       const nextElements = history[newIndex];
       setElements(nextElements);
+      // Mark as internal change
+      isInternalChangeRef.current = true;
       onChange?.(nextElements);
     }
   }, [history, historyIndex, onChange]);
@@ -85,6 +100,8 @@ export function DrawingEditor({ drawingData = [], onChange, onTextRecognized }: 
       setElements(emptyElements);
       setHistory([...history.slice(0, historyIndex + 1), emptyElements]);
       setHistoryIndex(historyIndex + 1);
+      // Mark as internal change
+      isInternalChangeRef.current = true;
       onChange?.(emptyElements);
     }
   }, [history, historyIndex, onChange]);
@@ -142,6 +159,8 @@ export function DrawingEditor({ drawingData = [], onChange, onTextRecognized }: 
       setElements(beautifiedElements);
       setHistory([...history.slice(0, historyIndex + 1), beautifiedElements]);
       setHistoryIndex(historyIndex + 1);
+      // Mark as internal change
+      isInternalChangeRef.current = true;
       onChange?.(beautifiedElements);
 
       toast.success('Handwriting beautified!');

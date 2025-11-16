@@ -54,6 +54,10 @@ export function NoteEditor({
   const textPanelRef = useRef<ImperativePanelHandle>(null);
   const drawingPanelRef = useRef<ImperativePanelHandle>(null);
 
+  // Track panel sizes before collapse to restore them
+  const textPanelSizeRef = useRef<number>(50);
+  const drawingPanelSizeRef = useRef<number>(50);
+
   const handleDragStart = (e: React.DragEvent, panelType: 'text' | 'drawing') => {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', panelType);
@@ -188,8 +192,21 @@ export function NoteEditor({
       defaultSize={50}
       minSize={20}
       collapsible={true}
-      onCollapse={() => setIsTextCollapsed(true)}
+      onCollapse={() => {
+        // Save current size before collapsing
+        const currentSize = textPanelRef.current?.getSize();
+        if (currentSize) {
+          textPanelSizeRef.current = currentSize;
+        }
+        setIsTextCollapsed(true);
+      }}
       onExpand={() => setIsTextCollapsed(false)}
+      onResize={(size) => {
+        // Track size changes when not collapsed
+        if (!isTextCollapsed) {
+          textPanelSizeRef.current = size;
+        }
+      }}
     >
       <div
         className="flex flex-col h-full bg-white border-r-2 border-gray-300"
@@ -234,8 +251,21 @@ export function NoteEditor({
       defaultSize={50}
       minSize={20}
       collapsible={true}
-      onCollapse={() => setIsDrawingCollapsed(true)}
+      onCollapse={() => {
+        // Save current size before collapsing
+        const currentSize = drawingPanelRef.current?.getSize();
+        if (currentSize) {
+          drawingPanelSizeRef.current = currentSize;
+        }
+        setIsDrawingCollapsed(true);
+      }}
       onExpand={() => setIsDrawingCollapsed(false)}
+      onResize={(size) => {
+        // Track size changes when not collapsed
+        if (!isDrawingCollapsed) {
+          drawingPanelSizeRef.current = size;
+        }
+      }}
     >
       <div
         className="flex flex-col h-full bg-white"
@@ -284,7 +314,13 @@ export function NoteEditor({
           variant="outline"
           size="sm"
           className="absolute top-1/2 left-2 transform -translate-y-1/2 z-10 shadow-lg bg-white"
-          onClick={() => textPanelRef.current?.expand()}
+          onClick={() => {
+            textPanelRef.current?.expand();
+            // Restore previous size after a brief delay to let expand complete
+            setTimeout(() => {
+              textPanelRef.current?.resize(textPanelSizeRef.current);
+            }, 0);
+          }}
           title="Expand Text Editor"
         >
           <ChevronRight className="w-4 h-4" />
@@ -295,7 +331,13 @@ export function NoteEditor({
           variant="outline"
           size="sm"
           className="absolute top-1/2 right-2 transform -translate-y-1/2 z-10 shadow-lg bg-white"
-          onClick={() => drawingPanelRef.current?.expand()}
+          onClick={() => {
+            drawingPanelRef.current?.expand();
+            // Restore previous size after a brief delay to let expand complete
+            setTimeout(() => {
+              drawingPanelRef.current?.resize(drawingPanelSizeRef.current);
+            }, 0);
+          }}
           title="Expand Drawing Canvas"
         >
           <ChevronLeft className="w-4 h-4" />
