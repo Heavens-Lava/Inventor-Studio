@@ -206,26 +206,17 @@ export function NoteEditor({
   const toggleTextPanel = () => {
     if (isDrawingCollapsed) {
       // Drawing is collapsed, restore split view
-      const textSize = textPanelSizeRef.current;
-      const drawingSize = drawingPanelSizeRef.current;
-
       drawingPanelRef.current?.expand();
-
-      // Use requestAnimationFrame for smoother resize after expand
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          if (textPanelRef.current && drawingPanelRef.current) {
-            textPanelRef.current.resize(textSize);
-            drawingPanelRef.current.resize(drawingSize);
-          }
-        }, 50);
-      });
     } else {
-      // Collapse drawing to show full text
+      // Collapse drawing to show full text - save current sizes first
       const currentTextSize = textPanelRef.current?.getSize();
       const currentDrawingSize = drawingPanelRef.current?.getSize();
-      if (currentTextSize && currentTextSize < 100) textPanelSizeRef.current = currentTextSize;
-      if (currentDrawingSize && currentDrawingSize < 100) drawingPanelSizeRef.current = currentDrawingSize;
+      if (currentTextSize && currentTextSize > 10 && currentTextSize < 90) {
+        textPanelSizeRef.current = currentTextSize;
+      }
+      if (currentDrawingSize && currentDrawingSize > 10 && currentDrawingSize < 90) {
+        drawingPanelSizeRef.current = currentDrawingSize;
+      }
       drawingPanelRef.current?.collapse();
     }
   };
@@ -233,14 +224,23 @@ export function NoteEditor({
   const textPanel = (
     <Panel
       ref={textPanelRef}
-      defaultSize={50}
+      defaultSize={textPanelSizeRef.current}
       minSize={20}
       collapsible={true}
+      collapsedSize={0}
       onCollapse={() => setIsTextCollapsed(true)}
-      onExpand={() => setIsTextCollapsed(false)}
+      onExpand={() => {
+        setIsTextCollapsed(false);
+        // Restore saved size after expand
+        setTimeout(() => {
+          if (textPanelRef.current && textPanelSizeRef.current > 10) {
+            textPanelRef.current.resize(textPanelSizeRef.current);
+          }
+        }, 100);
+      }}
       onResize={(size) => {
-        // Track size changes when not collapsed
-        if (!isTextCollapsed && !isDrawingCollapsed) {
+        // Track size changes when both panels are visible
+        if (!isTextCollapsed && !isDrawingCollapsed && size > 10 && size < 90) {
           textPanelSizeRef.current = size;
         }
       }}
@@ -286,26 +286,17 @@ export function NoteEditor({
   const toggleDrawingPanel = () => {
     if (isTextCollapsed) {
       // Text is collapsed, restore split view
-      const textSize = textPanelSizeRef.current;
-      const drawingSize = drawingPanelSizeRef.current;
-
       textPanelRef.current?.expand();
-
-      // Use requestAnimationFrame for smoother resize after expand
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          if (textPanelRef.current && drawingPanelRef.current) {
-            textPanelRef.current.resize(textSize);
-            drawingPanelRef.current.resize(drawingSize);
-          }
-        }, 50);
-      });
     } else {
-      // Collapse text to show full drawing
+      // Collapse text to show full drawing - save current sizes first
       const currentTextSize = textPanelRef.current?.getSize();
       const currentDrawingSize = drawingPanelRef.current?.getSize();
-      if (currentTextSize && currentTextSize < 100) textPanelSizeRef.current = currentTextSize;
-      if (currentDrawingSize && currentDrawingSize < 100) drawingPanelSizeRef.current = currentDrawingSize;
+      if (currentTextSize && currentTextSize > 10 && currentTextSize < 90) {
+        textPanelSizeRef.current = currentTextSize;
+      }
+      if (currentDrawingSize && currentDrawingSize > 10 && currentDrawingSize < 90) {
+        drawingPanelSizeRef.current = currentDrawingSize;
+      }
       textPanelRef.current?.collapse();
     }
   };
@@ -313,14 +304,23 @@ export function NoteEditor({
   const drawingPanel = (
     <Panel
       ref={drawingPanelRef}
-      defaultSize={50}
+      defaultSize={drawingPanelSizeRef.current}
       minSize={20}
       collapsible={true}
+      collapsedSize={0}
       onCollapse={() => setIsDrawingCollapsed(true)}
-      onExpand={() => setIsDrawingCollapsed(false)}
+      onExpand={() => {
+        setIsDrawingCollapsed(false);
+        // Restore saved size after expand
+        setTimeout(() => {
+          if (drawingPanelRef.current && drawingPanelSizeRef.current > 10) {
+            drawingPanelRef.current.resize(drawingPanelSizeRef.current);
+          }
+        }, 100);
+      }}
       onResize={(size) => {
-        // Track size changes when not collapsed
-        if (!isTextCollapsed && !isDrawingCollapsed) {
+        // Track size changes when both panels are visible
+        if (!isTextCollapsed && !isDrawingCollapsed && size > 10 && size < 90) {
           drawingPanelSizeRef.current = size;
         }
       }}
