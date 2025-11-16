@@ -206,17 +206,26 @@ export function NoteEditor({
   const toggleTextPanel = () => {
     if (isDrawingCollapsed) {
       // Drawing is collapsed, restore split view
+      const textSize = textPanelSizeRef.current;
+      const drawingSize = drawingPanelSizeRef.current;
+
       drawingPanelRef.current?.expand();
-      setTimeout(() => {
-        drawingPanelRef.current?.resize(drawingPanelSizeRef.current);
-        textPanelRef.current?.resize(textPanelSizeRef.current);
-      }, 0);
+
+      // Use requestAnimationFrame for smoother resize after expand
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          if (textPanelRef.current && drawingPanelRef.current) {
+            textPanelRef.current.resize(textSize);
+            drawingPanelRef.current.resize(drawingSize);
+          }
+        }, 50);
+      });
     } else {
       // Collapse drawing to show full text
       const currentTextSize = textPanelRef.current?.getSize();
       const currentDrawingSize = drawingPanelRef.current?.getSize();
-      if (currentTextSize) textPanelSizeRef.current = currentTextSize;
-      if (currentDrawingSize) drawingPanelSizeRef.current = currentDrawingSize;
+      if (currentTextSize && currentTextSize < 100) textPanelSizeRef.current = currentTextSize;
+      if (currentDrawingSize && currentDrawingSize < 100) drawingPanelSizeRef.current = currentDrawingSize;
       drawingPanelRef.current?.collapse();
     }
   };
@@ -277,17 +286,26 @@ export function NoteEditor({
   const toggleDrawingPanel = () => {
     if (isTextCollapsed) {
       // Text is collapsed, restore split view
+      const textSize = textPanelSizeRef.current;
+      const drawingSize = drawingPanelSizeRef.current;
+
       textPanelRef.current?.expand();
-      setTimeout(() => {
-        textPanelRef.current?.resize(textPanelSizeRef.current);
-        drawingPanelRef.current?.resize(drawingPanelSizeRef.current);
-      }, 0);
+
+      // Use requestAnimationFrame for smoother resize after expand
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          if (textPanelRef.current && drawingPanelRef.current) {
+            textPanelRef.current.resize(textSize);
+            drawingPanelRef.current.resize(drawingSize);
+          }
+        }, 50);
+      });
     } else {
       // Collapse text to show full drawing
       const currentTextSize = textPanelRef.current?.getSize();
       const currentDrawingSize = drawingPanelRef.current?.getSize();
-      if (currentTextSize) textPanelSizeRef.current = currentTextSize;
-      if (currentDrawingSize) drawingPanelSizeRef.current = currentDrawingSize;
+      if (currentTextSize && currentTextSize < 100) textPanelSizeRef.current = currentTextSize;
+      if (currentDrawingSize && currentDrawingSize < 100) drawingPanelSizeRef.current = currentDrawingSize;
       textPanelRef.current?.collapse();
     }
   };
