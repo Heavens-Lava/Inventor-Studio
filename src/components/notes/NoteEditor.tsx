@@ -16,14 +16,14 @@ import { TableHeader } from '@tiptap/extension-table-header';
 import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight';
 import { Image } from '@tiptap/extension-image';
 import { common, createLowlight } from 'lowlight';
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { EditorToolbar } from './EditorToolbar';
 import { EditorBubbleMenu } from './EditorBubbleMenu';
 import { DrawingEditor } from './DrawingEditor';
 import type { DrawingElement } from '@/types/note';
 import { Button } from '@/components/ui/button';
 import { Pencil, Type, ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { Panel, PanelGroup, PanelResizeHandle, ImperativePanelHandle } from 'react-resizable-panels';
 
 // Create lowlight instance for syntax highlighting
 const lowlight = createLowlight(common);
@@ -49,6 +49,10 @@ export function NoteEditor({
   const [isDrawingCollapsed, setIsDrawingCollapsed] = useState(false);
   const [isPanelsSwapped, setIsPanelsSwapped] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState<'text' | 'drawing' | null>(null);
+
+  // Refs for programmatic panel control
+  const textPanelRef = useRef<ImperativePanelHandle>(null);
+  const drawingPanelRef = useRef<ImperativePanelHandle>(null);
 
   const handleDragStart = (e: React.DragEvent, panelType: 'text' | 'drawing') => {
     e.dataTransfer.effectAllowed = 'move';
@@ -180,13 +184,12 @@ export function NoteEditor({
 
   const textPanel = (
     <Panel
+      ref={textPanelRef}
       defaultSize={50}
       minSize={20}
       collapsible={true}
-      collapsedSize={0}
       onCollapse={() => setIsTextCollapsed(true)}
       onExpand={() => setIsTextCollapsed(false)}
-      className={isTextCollapsed ? 'hidden' : ''}
     >
       <div
         className="flex flex-col h-full bg-white border-r-2 border-gray-300"
@@ -209,7 +212,7 @@ export function NoteEditor({
               variant="ghost"
               size="sm"
               className="ml-auto h-6 w-6 p-0"
-              onClick={() => setIsTextCollapsed(true)}
+              onClick={() => textPanelRef.current?.collapse()}
               title="Collapse Text Editor"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -227,13 +230,12 @@ export function NoteEditor({
 
   const drawingPanel = (
     <Panel
+      ref={drawingPanelRef}
       defaultSize={50}
       minSize={20}
       collapsible={true}
-      collapsedSize={0}
       onCollapse={() => setIsDrawingCollapsed(true)}
       onExpand={() => setIsDrawingCollapsed(false)}
-      className={isDrawingCollapsed ? 'hidden' : ''}
     >
       <div
         className="flex flex-col h-full bg-white"
@@ -257,7 +259,7 @@ export function NoteEditor({
               variant="ghost"
               size="sm"
               className="h-6 w-6 p-0"
-              onClick={() => setIsDrawingCollapsed(true)}
+              onClick={() => drawingPanelRef.current?.collapse()}
               title="Collapse Drawing Canvas"
             >
               <ChevronRight className="w-4 h-4" />
@@ -282,7 +284,7 @@ export function NoteEditor({
           variant="outline"
           size="sm"
           className="absolute top-1/2 left-2 transform -translate-y-1/2 z-10 shadow-lg bg-white"
-          onClick={() => setIsTextCollapsed(false)}
+          onClick={() => textPanelRef.current?.expand()}
           title="Expand Text Editor"
         >
           <ChevronRight className="w-4 h-4" />
@@ -293,7 +295,7 @@ export function NoteEditor({
           variant="outline"
           size="sm"
           className="absolute top-1/2 right-2 transform -translate-y-1/2 z-10 shadow-lg bg-white"
-          onClick={() => setIsDrawingCollapsed(false)}
+          onClick={() => drawingPanelRef.current?.expand()}
           title="Expand Drawing Canvas"
         >
           <ChevronLeft className="w-4 h-4" />

@@ -269,10 +269,29 @@ export default function NotesApp() {
             return !wasEarned && isNowEarned;
           });
 
-          // Show notifications for new badges
-          newBadges.forEach((badge) => {
-            toast.success(`🏆 Badge Unlocked: ${badge.name}!`);
-          });
+          // Show notifications for new badges and persist them
+          if (newBadges.length > 0) {
+            newBadges.forEach((badge) => {
+              toast.success(`🏆 Badge Unlocked: ${badge.name}!`);
+            });
+
+            // Update settings with newly earned badges
+            const updatedBadges = settings.userStats?.badges.map((b) => {
+              const newBadge = newBadges.find((nb) => nb.id === b.id);
+              if (newBadge) {
+                return { ...b, earnedAt: new Date() };
+              }
+              return b;
+            }) || [];
+
+            updateSettings({
+              ...settings,
+              userStats: {
+                ...settings.userStats!,
+                badges: updatedBadges,
+              },
+            });
+          }
 
           // Add gamification data to update
           noteUpdate = {

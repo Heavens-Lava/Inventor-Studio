@@ -25,12 +25,19 @@ export function DrawingEditor({ drawingData = [], onChange, onTextRecognized }: 
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Update elements when drawingData prop changes (note switching)
+  // Only reset history if the data is actually different (not just a re-render)
   useEffect(() => {
-    // Always sync with drawingData prop when it changes
-    setElements(drawingData);
-    setHistory([drawingData]);
-    setHistoryIndex(0);
-  }, [drawingData]);
+    // Check if drawingData is actually different from current elements
+    // by comparing JSON strings (simple deep equality check)
+    const isSameData = JSON.stringify(drawingData) === JSON.stringify(elements);
+
+    if (!isSameData) {
+      // Only reset if data is actually different (e.g., switching notes)
+      setElements(drawingData);
+      setHistory([drawingData]);
+      setHistoryIndex(0);
+    }
+  }, [drawingData]); // Intentionally not including elements in deps
 
   // Handle canvas changes
   const handleCanvasChange = useCallback(
