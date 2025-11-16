@@ -54,6 +54,9 @@ export const DrawingCanvas = forwardRef<HTMLCanvasElement, DrawingCanvasProps>(f
   const [panOffset, setPanOffset] = useState<Point>({ x: 0, y: 0 });
   const [lastPanPoint, setLastPanPoint] = useState<Point | null>(null);
 
+  // Track what we last sent to prevent accepting stale data back
+  const lastSentDataRef = useRef<string>(JSON.stringify(canvasData));
+
   // Snap point to grid if enabled
   const snapPoint = useCallback(
     (point: Point): Point => {
@@ -300,6 +303,9 @@ export const DrawingCanvas = forwardRef<HTMLCanvasElement, DrawingCanvasProps>(f
 
     const newElements = [...elements, newElement];
     setElements(newElements);
+
+    // Track what we're sending before notifying parent
+    lastSentDataRef.current = JSON.stringify(newElements);
     onChange?.(newElements);
 
     setIsDrawing(false);
@@ -337,8 +343,17 @@ export const DrawingCanvas = forwardRef<HTMLCanvasElement, DrawingCanvasProps>(f
 
   // Update elements when canvasData prop changes
   useEffect(() => {
-    // Always sync with canvasData prop, even if empty
+    const newDataStr = JSON.stringify(canvasData);
+    const lastSentStr = lastSentDataRef.current;
+
+    // If this matches what we just sent, ignore it (it's our own data coming back)
+    if (newDataStr === lastSentStr) {
+      return;
+    }
+
+    // This is genuinely new external data (like switching notes or undo/redo)
     setElements(canvasData);
+    lastSentDataRef.current = newDataStr;
   }, [canvasData]);
 
   return (
