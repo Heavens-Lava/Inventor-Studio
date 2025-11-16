@@ -33,6 +33,9 @@ import {
   Plus,
   Mic,
   MicOff,
+  Merge,
+  Split,
+  LayoutList,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -604,6 +607,68 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
               </TooltipTrigger>
               <TooltipContent>
                 <p>Delete Row</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => editor.chain().focus().mergeCells().run()}
+                  disabled={!editor.can().mergeCells()}
+                >
+                  <Merge className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Merge Cells</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => editor.chain().focus().splitCell().run()}
+                  disabled={!editor.can().splitCell()}
+                >
+                  <Split className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Split Cell</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => editor.chain().focus().toggleHeaderRow().run()}
+                >
+                  <LayoutList className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Toggle Header Row</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => editor.chain().focus().toggleHeaderColumn().run()}
+                >
+                  <LayoutList className="w-4 h-4 rotate-90" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Toggle Header Column</p>
               </TooltipContent>
             </Tooltip>
 

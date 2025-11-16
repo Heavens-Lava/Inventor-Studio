@@ -119,19 +119,24 @@ export function NoteEditor({
       }),
       Table.configure({
         resizable: true,
+        allowTableNodeSelection: true,
         HTMLAttributes: {
-          class: 'border-collapse table-auto w-full my-4',
+          class: 'border-collapse table-auto w-full my-4 border-2 border-gray-400 relative',
         },
       }),
-      TableRow,
+      TableRow.configure({
+        HTMLAttributes: {
+          class: 'hover:bg-gray-50 transition-colors',
+        },
+      }),
       TableHeader.configure({
         HTMLAttributes: {
-          class: 'border border-gray-300 bg-gray-50 font-semibold p-2 text-left',
+          class: 'border border-gray-400 bg-blue-50 font-semibold p-3 text-left min-w-[100px] hover:bg-blue-100 transition-colors',
         },
       }),
       TableCell.configure({
         HTMLAttributes: {
-          class: 'border border-gray-300 p-2',
+          class: 'border border-gray-300 p-3 min-w-[100px] hover:bg-gray-50 transition-colors',
         },
       }),
       CodeBlockLowlight.configure({
@@ -155,7 +160,18 @@ export function NoteEditor({
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose lg:prose-lg max-w-none focus:outline-none min-h-[500px] p-6',
+        class: 'prose prose-sm sm:prose lg:prose-lg max-w-none focus:outline-none min-h-[500px] p-6 [&_table]:table-fixed [&_td]:cursor-text [&_th]:cursor-text',
+      },
+      handleDOMEvents: {
+        // Improve table cell selection
+        mousedown: (view, event) => {
+          const target = event.target as HTMLElement;
+          if (target.tagName === 'TD' || target.tagName === 'TH') {
+            // Let Tiptap handle the click for table cells
+            return false;
+          }
+          return false;
+        },
       },
     },
   });

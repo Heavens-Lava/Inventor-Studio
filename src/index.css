@@ -232,28 +232,41 @@ All colors MUST be HSL.
   border-collapse: collapse;
   table-layout: fixed;
   width: 100%;
-  margin: 1rem 0;
+  margin: 1.5rem 0;
   overflow: hidden;
+  border: 2px solid #9ca3af;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 0.375rem;
+  position: relative;
 }
 
 .ProseMirror table td,
 .ProseMirror table th {
-  min-width: 1em;
-  border: 2px solid #d1d5db;
-  padding: 0.5rem 0.75rem;
+  min-width: 100px;
+  border: 1px solid #d1d5db;
+  padding: 0.75rem 1rem;
   vertical-align: top;
   box-sizing: border-box;
   position: relative;
+  transition: background-color 0.15s ease;
+}
+
+.ProseMirror table td:hover,
+.ProseMirror table th:hover {
+  background-color: #f9fafb;
 }
 
 .ProseMirror table th {
-  font-weight: bold;
+  font-weight: 600;
   text-align: left;
-  background-color: #f3f4f6;
+  background-color: #dbeafe;
+  border-color: #93c5fd;
+  color: #1e40af;
 }
 
 .ProseMirror table .selectedCell {
-  background: rgba(200, 200, 255, 0.4);
+  background-color: rgba(96, 165, 250, 0.3) !important;
+  border-color: #3b82f6 !important;
 }
 
 .ProseMirror table .column-resize-handle {
@@ -263,7 +276,40 @@ All colors MUST be HSL.
   bottom: -2px;
   width: 4px;
   background-color: #3b82f6;
-  pointer-events: none;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+/* Table node selection (drag handle appears when table is selected) */
+.ProseMirror-selectednode table {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Add visual cue for table hover (for moving) */
+.ProseMirror table:hover::before {
+  content: '⋮⋮';
+  position: absolute;
+  left: -20px;
+  top: 0;
+  font-size: 1.2rem;
+  color: #9ca3af;
+  cursor: grab;
+  line-height: 1;
+  padding: 0.25rem;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.ProseMirror table:hover::before:hover {
+  opacity: 1;
+  color: #3b82f6;
+}
+
+/* Improve cell selection visibility */
+.ProseMirror table td::selection,
+.ProseMirror table th::selection {
+  background-color: rgba(96, 165, 250, 0.4);
 }
 
 /* Image Styles */
