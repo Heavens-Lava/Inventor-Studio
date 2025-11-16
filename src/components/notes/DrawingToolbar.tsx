@@ -19,7 +19,10 @@ import {
   Sparkles,
   Type,
   Loader2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
+import { useState } from 'react';
 import { DrawingTool } from './DrawingCanvas';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
@@ -100,10 +103,60 @@ export function DrawingToolbar({
   onBeautify,
   isProcessing = false,
 }: DrawingToolbarProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   return (
     <TooltipProvider>
       <div className="border-b border-gray-200 bg-white sticky top-0 z-10 p-2">
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Mobile: Show toggle and essential tools */}
+        <div className="flex md:hidden items-center gap-1 mb-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex-shrink-0"
+          >
+            {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </Button>
+
+          {/* Essential mobile tools */}
+          <div className="flex items-center gap-1 overflow-x-auto">
+            <Button
+              variant={tool === 'pen' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => onToolChange('pen')}
+            >
+              <Pencil className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={tool === 'eraser' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => onToolChange('eraser')}
+            >
+              <Eraser className="w-4 h-4" />
+            </Button>
+            {onUndo && (
+              <Button variant="ghost" size="sm" onClick={onUndo} disabled={!canUndo}>
+                <Undo className="w-4 h-4" />
+              </Button>
+            )}
+            {onRedo && (
+              <Button variant="ghost" size="sm" onClick={onRedo} disabled={!canRedo}>
+                <Redo className="w-4 h-4" />
+              </Button>
+            )}
+            <input
+              type="color"
+              value={strokeColor}
+              onChange={(e) => onStrokeColorChange(e.target.value)}
+              className="w-8 h-8 rounded cursor-pointer border-2"
+              title="Color"
+            />
+          </div>
+        </div>
+
+        {/* Full toolbar */}
+        <div className={`flex-wrap items-center gap-2 ${isExpanded ? 'flex' : 'hidden md:flex'}`}>
           {/* Undo/Redo */}
           {onUndo && onRedo && (
             <>

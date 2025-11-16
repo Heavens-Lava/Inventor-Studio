@@ -236,6 +236,115 @@ export const DrawingCanvas = forwardRef<HTMLCanvasElement, DrawingCanvasProps>(f
     panOffset,
   ]);
 
+  // Get touch position relative to canvas
+  const getTouchPos = useCallback(
+    (e: React.TouchEvent<HTMLCanvasElement>): Point => {
+      const canvas = internalCanvasRef.current;
+      if (!canvas) return { x: 0, y: 0 };
+
+      const touch = e.touches[0] || e.changedTouches[0];
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+
+      const canvasX = (touch.clientX - rect.left) * scaleX;
+      const canvasY = (touch.clientY - rect.top) * scaleY;
+
+      const point = {
+        x: (canvasX - panOffset.x) / zoom,
+        y: (canvasY - panOffset.y) / zoom,
+      };
+
+      return snapPoint(point);
+    },
+    [snapPoint, zoom, panOffset]
+  );
+
+  // Handle touch start
+  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+
+    // Two finger touch = pan
+    if (e.touches.length === 2) {
+      setIsPanning(true);
+      const touch = e.touches[0];
+      setLastPanPoint({ x: touch.clientX, y: touch.clientY });
+      return;
+    }
+
+    // Single finger touch = draw
+    if (e.touches.length === 1 && !isPanning) {
+      const point = getTouchPos(e);
+      setIsDrawing(true);
+      setStartPoint(point);
+      setCurrentPoint(point);
+
+      if (tool === 'pen' || tool === 'eraser') {
+        setCurrentPath([point]);
+      }
+    }
+  };
+
+  // Handle touch move
+  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+
+    // Handle panning with two fingers
+    if (isPanning && e.touches.length >= 1 && lastPanPoint) {
+      const touch = e.touches[0];
+      const dx = touch.clientX - lastPanPoint.x;
+      const dy = touch.clientY - lastPanPoint.y;
+      setPanOffset((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
+      setLastPanPoint({ x: touch.clientX, y: touch.clientY });
+      return;
+    }
+
+    // Handle drawing with single finger
+    if (!isDrawing || e.touches.length !== 1) return;
+
+    const point = getTouchPos(e);
+    setCurrentPoint(point);
+
+    if (tool === 'pen' || tool === 'eraser') {
+      setCurrentPath((prev) => [...prev, point]);
+    }
+  };
+
+  // Handle touch end
+  const handleTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+
+    // End panning
+    if (isPanning && e.touches.length === 0) {
+      setIsPanning(false);
+      setLastPanPoint(null);
+      return;
+    }
+
+    // End drawing
+    if (!isDrawing || !startPoint) return;
+
+    const newElement: DrawingElement = {
+      type: tool,
+      points: tool === 'pen' || tool === 'eraser' ? currentPath : [startPoint, currentPoint!],
+      strokeColor,
+      fillColor,
+      strokeWidth,
+    };
+
+    const newElements = [...elements, newElement];
+    setElements(newElements);
+
+    // Track what we're sending before notifying parent
+    lastSentDataRef.current = JSON.stringify(newElements);
+    onChange?.(newElements);
+
+    setIsDrawing(false);
+    setStartPoint(null);
+    setCurrentPoint(null);
+    setCurrentPath([]);
+  };
+
   // Handle mouse down
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const point = getMousePos(e);
@@ -360,12 +469,16 @@ export const DrawingCanvas = forwardRef<HTMLCanvasElement, DrawingCanvasProps>(f
     <div className="relative w-full h-full bg-gray-100">
       <canvas
         ref={internalCanvasRef}
-        className={`absolute inset-0 ${isPanning ? 'cursor-grabbing' : 'cursor-crosshair'}`}
+        className={`absolute inset-0 ${isPanning ? 'cursor-grabbing' : 'cursor-crosshair'} touch-none`}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
         onContextMenu={(e) => e.preventDefault()}
       />
 
@@ -401,10 +514,12 @@ export const DrawingCanvas = forwardRef<HTMLCanvasElement, DrawingCanvasProps>(f
       </div>
 
       {/* Pan Instructions */}
-      <div className="absolute top-4 right-4 bg-white/90 rounded-lg shadow-sm border border-gray-200 px-3 py-2 text-xs text-gray-600">
+      <div className="absolute top-4 right-4 bg-white/90 rounded-lg shadow-sm border border-gray-200 px-2 sm:px-3 py-1 sm:py-2 text-xs text-gray-600">
         <div className="font-semibold mb-1">Controls:</div>
-        <div>🖱️ Scroll: Zoom</div>
-        <div>⇧ Shift+Drag: Pan</div>
+        <div className="hidden md:block">🖱️ Scroll: Zoom</div>
+        <div className="hidden md:block">⇧ Shift+Drag: Pan</div>
+        <div className="md:hidden">👆 One finger: Draw</div>
+        <div className="md:hidden">✌️ Two fingers: Pan</div>
       </div>
     </div>
   );

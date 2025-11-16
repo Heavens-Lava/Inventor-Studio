@@ -36,6 +36,8 @@ import {
   Merge,
   Split,
   LayoutList,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -51,6 +53,7 @@ interface EditorToolbarProps {
 
 export function EditorToolbar({ editor }: EditorToolbarProps) {
   const [isRecording, setIsRecording] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
@@ -174,7 +177,62 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
 
   return (
     <TooltipProvider>
-      <div className="border-b border-gray-200 bg-white sticky top-0 z-10 flex flex-wrap items-center gap-1 p-2">
+      <div className="border-b border-gray-200 bg-white sticky top-0 z-10 p-2">
+        {/* Mobile: Show toggle button and essential tools */}
+        <div className="flex md:hidden items-center gap-1 mb-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex-shrink-0"
+          >
+            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </Button>
+
+          {/* Essential mobile tools - always visible */}
+          <div className="flex items-center gap-1 flex-wrap">
+            <Button
+              variant={editor.isActive('bold') ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => editor.chain().focus().toggleBold().run()}
+            >
+              <Bold className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={editor.isActive('italic') ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => editor.chain().focus().toggleItalic().run()}
+            >
+              <Italic className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={editor.isActive('bulletList') ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => editor.chain().focus().toggleBulletList().run()}
+            >
+              <List className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().undo().run()}
+              disabled={!editor.can().undo()}
+            >
+              <Undo className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().redo().run()}
+              disabled={!editor.can().redo()}
+            >
+              <Redo className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Full toolbar - desktop always visible, mobile when expanded */}
+        <div className={`flex-wrap items-center gap-1 ${isExpanded ? 'flex' : 'hidden md:flex'}`}>
         {/* Undo/Redo */}
         <Tooltip>
           <TooltipTrigger asChild>
@@ -749,6 +807,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
 
         {/* Chart Dialog */}
         <ChartDialog editor={editor} />
+        </div>
       </div>
     </TooltipProvider>
   );
