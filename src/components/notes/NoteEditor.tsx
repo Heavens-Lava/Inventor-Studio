@@ -160,7 +160,7 @@ export function NoteEditor({
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose lg:prose-lg max-w-none focus:outline-none min-h-[500px] p-6 [&_table]:table-fixed [&_td]:cursor-text [&_th]:cursor-text',
+        class: 'prose prose-sm sm:prose lg:prose-lg max-w-none focus:outline-none min-h-[300px] sm:min-h-[500px] p-3 sm:p-6 [&_table]:table-fixed [&_td]:cursor-text [&_th]:cursor-text',
       },
       handleDOMEvents: {
         // Improve table cell selection
@@ -252,20 +252,20 @@ export function NoteEditor({
         onDrop={(e) => handleDrop(e, 'text')}
       >
         <div
-          className={`border-b border-gray-200 px-3 py-2 bg-gradient-to-r from-blue-50 to-white cursor-move transition-all ${
+          className={`border-b border-gray-200 px-2 sm:px-3 py-2 sm:py-2 bg-gradient-to-r from-blue-50 to-white cursor-move transition-all ${
             isDraggingOver === 'text' ? 'ring-2 ring-blue-400 bg-blue-100' : ''
           }`}
           draggable
           onDragStart={(e) => handleDragStart(e, 'text')}
         >
           <div className="flex items-center gap-2">
-            <GripVertical className="w-4 h-4 text-gray-400" />
-            <Type className="w-5 h-5 text-blue-600" />
-            <h3 className="font-semibold text-gray-800">Text Editor</h3>
+            <GripVertical className="w-4 h-4 text-gray-400 hidden md:block" />
+            <Type className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+            <h3 className="font-semibold text-sm sm:text-base text-gray-800">Text Editor</h3>
             <Button
               variant="ghost"
               size="sm"
-              className="ml-auto h-6 w-6 p-0"
+              className="ml-auto h-8 w-8 sm:h-6 sm:w-6 p-0 touch-manipulation"
               onClick={toggleTextPanel}
               title={isDrawingCollapsed ? "Show Both Editors" : "Show Text Editor Only"}
             >
@@ -332,21 +332,21 @@ export function NoteEditor({
         onDrop={(e) => handleDrop(e, 'drawing')}
       >
         <div
-          className={`border-b border-gray-200 px-3 py-2 bg-gradient-to-r from-purple-50 to-white cursor-move transition-all ${
+          className={`border-b border-gray-200 px-2 sm:px-3 py-2 sm:py-2 bg-gradient-to-r from-purple-50 to-white cursor-move transition-all ${
             isDraggingOver === 'drawing' ? 'ring-2 ring-purple-400 bg-purple-100' : ''
           }`}
           draggable
           onDragStart={(e) => handleDragStart(e, 'drawing')}
         >
           <div className="flex items-center gap-2">
-            <GripVertical className="w-4 h-4 text-gray-400" />
-            <Pencil className="w-5 h-5 text-purple-600" />
-            <h3 className="font-semibold text-gray-800">Drawing Canvas</h3>
-            <span className="text-xs text-gray-500 ml-auto">Infinite canvas with zoom & pan</span>
+            <GripVertical className="w-4 h-4 text-gray-400 hidden md:block" />
+            <Pencil className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+            <h3 className="font-semibold text-sm sm:text-base text-gray-800">Drawing Canvas</h3>
+            <span className="text-xs text-gray-500 ml-auto hidden lg:inline">Infinite canvas with zoom & pan</span>
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 w-6 p-0"
+              className="h-8 w-8 sm:h-6 sm:w-6 p-0 touch-manipulation lg:ml-0"
               onClick={toggleDrawingPanel}
               title={isTextCollapsed ? "Show Both Editors" : "Show Drawing Canvas Only"}
             >
@@ -366,7 +366,8 @@ export function NoteEditor({
 
   return (
     <div className="note-editor h-full bg-gray-50 relative">
-      <PanelGroup direction="horizontal" className="h-full">
+      {/* Desktop: Horizontal panels, Mobile: Vertical panels */}
+      <PanelGroup direction="horizontal" className="h-full hidden md:flex">
         {isPanelsSwapped ? (
           <>
             {drawingPanel}
@@ -380,6 +381,27 @@ export function NoteEditor({
             {textPanel}
             {!isTextCollapsed && !isDrawingCollapsed && (
               <PanelResizeHandle className="w-1 bg-gray-300 hover:bg-blue-500 transition-colors cursor-col-resize" />
+            )}
+            {drawingPanel}
+          </>
+        )}
+      </PanelGroup>
+
+      {/* Mobile: Vertical layout */}
+      <PanelGroup direction="vertical" className="h-full flex md:hidden">
+        {isPanelsSwapped ? (
+          <>
+            {drawingPanel}
+            {!isTextCollapsed && !isDrawingCollapsed && (
+              <PanelResizeHandle className="h-1 bg-gray-300 hover:bg-blue-500 transition-colors cursor-row-resize" />
+            )}
+            {textPanel}
+          </>
+        ) : (
+          <>
+            {textPanel}
+            {!isTextCollapsed && !isDrawingCollapsed && (
+              <PanelResizeHandle className="h-1 bg-gray-300 hover:bg-blue-500 transition-colors cursor-row-resize" />
             )}
             {drawingPanel}
           </>

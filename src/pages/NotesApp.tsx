@@ -17,6 +17,7 @@ import {
   Tag as TagIcon,
   X,
   TrendingUp,
+  Menu,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { TagInput } from '@/components/notes/TagInput';
@@ -54,6 +55,7 @@ export default function NotesApp() {
   const [editingTitle, setEditingTitle] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState('');
   const [editingDrawingData, setEditingDrawingData] = useState<any[]>([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Calculate user stats from notes
   const userStats: NotesUserStats = useMemo(() => {
@@ -317,6 +319,7 @@ export default function NotesApp() {
       setActiveNoteId(noteId);
       setEditingContent(note.content);
       setEditingDrawingData(note.drawingData || []);
+      setIsSidebarOpen(false); // Close sidebar on mobile after selecting note
     }
   };
 
@@ -352,45 +355,78 @@ export default function NotesApp() {
   return (
     <div className="h-screen w-full flex flex-col bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/apps')}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
+      <div className="bg-white border-b border-gray-200 px-2 sm:px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Mobile menu toggle */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="md:hidden"
+          >
+            <Menu className="w-5 h-5" />
           </Button>
-          <div className="h-6 w-px bg-gray-300" />
+
+          <Button variant="ghost" size="sm" onClick={() => navigate('/apps')} className="hidden sm:flex">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">Back</span>
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/apps')} className="sm:hidden p-2">
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <div className="h-6 w-px bg-gray-300 hidden sm:block" />
           <Book className="w-5 h-5 text-blue-600" />
-          <h1 className="text-xl font-bold text-gray-900">Notes</h1>
+          <h1 className="text-lg sm:text-xl font-bold text-gray-900">Notes</h1>
           {settings.enableGamification && settings.userStats && (
-            <div className="flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-full text-sm font-semibold">
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-full text-sm font-semibold">
               <span className="text-lg">⭐</span>
               <span>Level {userStats.level}</span>
             </div>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-1 sm:gap-2">
           {settings.enableGamification && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => navigate('/notes/stats')}
-              className="flex items-center gap-2"
+              className="hidden sm:flex items-center gap-2"
             >
               <TrendingUp className="h-4 w-4" />
-              View Stats
+              <span className="hidden lg:inline">View Stats</span>
             </Button>
           )}
-          <Button onClick={handleCreateNote}>
-            <Plus className="w-4 h-4 mr-2" />
-            New Note
+          <Button onClick={handleCreateNote} size="sm" className="text-xs sm:text-sm">
+            <Plus className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">New Note</span>
           </Button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Sidebar Overlay for Mobile */}
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
         {/* Sidebar */}
-        <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+        <div
+          className={`
+            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+            md:translate-x-0
+            fixed md:relative
+            inset-y-0 left-0
+            z-50 md:z-0
+            w-80 sm:w-80
+            bg-white border-r border-gray-200
+            flex flex-col
+            transition-transform duration-300 ease-in-out
+          `}
+        >
           {/* Search */}
           <div className="p-4 border-b border-gray-200">
             <div className="relative">
@@ -537,7 +573,7 @@ export default function NotesApp() {
           {activeNote ? (
             <>
               {/* Editor Header */}
-              <div className="border-b border-gray-200 p-4 space-y-3">
+              <div className="border-b border-gray-200 p-2 sm:p-4 space-y-2 sm:space-y-3">
                 {editingTitle === activeNote.id ? (
                   <Input
                     value={activeNote.title}
@@ -552,25 +588,25 @@ export default function NotesApp() {
                       }
                     }}
                     autoFocus
-                    className="text-2xl font-bold border-none shadow-none focus-visible:ring-0"
+                    className="text-lg sm:text-2xl font-bold border-none shadow-none focus-visible:ring-0"
                   />
                 ) : (
                   <h2
-                    className="text-2xl font-bold cursor-pointer hover:text-blue-600"
+                    className="text-lg sm:text-2xl font-bold cursor-pointer hover:text-blue-600"
                     onClick={() => setEditingTitle(activeNote.id)}
                   >
                     {activeNote.title}
                   </h2>
                 )}
                 <div className="flex items-center gap-3">
-                  <p className="text-sm text-gray-500">
+                  <p className="text-xs sm:text-sm text-gray-500 truncate">
                     Last edited {new Date(activeNote.updatedAt).toLocaleString()}
                   </p>
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <TagIcon className="w-4 h-4 text-gray-600" />
-                    <h3 className="text-sm font-semibold text-gray-700">Tags</h3>
+                    <TagIcon className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
+                    <h3 className="text-xs sm:text-sm font-semibold text-gray-700">Tags</h3>
                   </div>
                   <TagInput
                     tags={activeNote.tags || []}
