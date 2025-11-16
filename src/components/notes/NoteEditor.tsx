@@ -35,6 +35,7 @@ interface NoteEditorProps {
   onDrawingChange?: (data: DrawingElement[]) => void;
   placeholder?: string;
   editable?: boolean;
+  noteId?: string; // Add noteId to uniquely identify each note
 }
 
 export function NoteEditor({
@@ -44,6 +45,7 @@ export function NoteEditor({
   onDrawingChange,
   placeholder = 'Start typing your note...',
   editable = true,
+  noteId,
 }: NoteEditorProps) {
   const [isTextCollapsed, setIsTextCollapsed] = useState(false);
   const [isDrawingCollapsed, setIsDrawingCollapsed] = useState(false);
@@ -265,7 +267,7 @@ export function NoteEditor({
           </div>
         </div>
         <DrawingEditor
-          key={`drawing-${JSON.stringify(drawingData?.slice(0, 1))}`}
+          key={noteId ? `drawing-${noteId}` : `drawing-${JSON.stringify(drawingData?.slice(0, 1))}`}
           drawingData={drawingData}
           onChange={onDrawingChange}
           onTextRecognized={handleTextRecognized}

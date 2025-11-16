@@ -570,6 +570,7 @@ export default function NotesApp() {
                   drawingData={editingDrawingData}
                   onDrawingChange={handleDrawingChange}
                   placeholder="Start typing your note..."
+                  noteId={activeNoteId || undefined}
                 />
               </div>
             </>
